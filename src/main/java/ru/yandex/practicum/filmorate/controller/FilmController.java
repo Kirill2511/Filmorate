@@ -8,17 +8,18 @@ import ru.yandex.practicum.filmorate.model.Film;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @RestController
 @RequestMapping("/films")
 public class FilmController {
     private final Map<Integer, Film> films = new ConcurrentHashMap<>();
-    private int nextId = 1;
+    private final AtomicInteger nextId = new AtomicInteger(1);
 
     @PostMapping
     public Film createFilm(@Valid @RequestBody Film film) {
-        film.setId(nextId++);
+        film.setId(nextId.getAndIncrement());
         films.put(film.getId(), film);
         log.info("Добавлен фильм: {}", film);
         return film;
