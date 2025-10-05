@@ -8,18 +8,19 @@ import ru.yandex.practicum.filmorate.model.User;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @RestController
 @RequestMapping("/users")
 public class UserController {
     private final Map<Integer, User> users = new ConcurrentHashMap<>();
-    private int nextId = 1;
+    private final AtomicInteger nextId = new AtomicInteger(1);
 
     @PostMapping
     public User createUser(@Valid @RequestBody User user) {
         validateAndSetUserName(user);
-        user.setId(nextId++);
+        user.setId(nextId.getAndIncrement());
         users.put(user.getId(), user);
         log.info("Создан пользователь: {}", user);
         return user;
