@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.utils.IdGenerator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,16 +15,23 @@ import java.util.Map;
 @RestController
 @RequestMapping("/users")
 public class UserController {
+    private final IdGenerator idGenerator = new IdGenerator();
     private final Map<Integer, User> users = new HashMap<>();
-    private int nextId = 1;
 
     @PostMapping
     public User createUser(@Valid @RequestBody User user) {
         validateAndSetUserName(user);
-        user.setId(nextId++);
+        user.setId(idGenerator.getNextId());
         users.put(user.getId(), user);
         log.info("Создан пользователь: {}", user);
         return user;
+    }
+
+    private void validateAndSetUserName(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+            log.info("Имя пользователя пустое, используется логин: {}", user.getLogin());
+        }
     }
 
     @PutMapping
@@ -42,12 +50,5 @@ public class UserController {
     public List<User> getAllUsers() {
         log.info("Запрос всех пользователей. Количество: {}", users.size());
         return new ArrayList<>(users.values());
-    }
-
-    private void validateAndSetUserName(User user) {
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-            log.info("Имя пользователя пустое, используется логин: {}", user.getLogin());
-        }
     }
 }

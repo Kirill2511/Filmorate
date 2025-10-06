@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.utils.IdGenerator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,12 +15,12 @@ import java.util.Map;
 @RestController
 @RequestMapping("/films")
 public class FilmController {
+    private final IdGenerator idGenerator = new IdGenerator();
     private final Map<Integer, Film> films = new HashMap<>();
-    private int nextId = 1;
 
     @PostMapping
     public Film createFilm(@Valid @RequestBody Film film) {
-        film.setId(nextId++);
+        film.setId(idGenerator.getNextId());
         films.put(film.getId(), film);
         log.info("Добавлен фильм: {}", film);
         return film;
