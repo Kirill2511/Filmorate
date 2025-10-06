@@ -5,21 +5,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Film;
 
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @RestController
 @RequestMapping("/films")
 public class FilmController {
-    private final Map<Integer, Film> films = new ConcurrentHashMap<>();
-    private final AtomicInteger nextId = new AtomicInteger(1);
+    private final Map<Integer, Film> films = new HashMap<>();
+    private int nextId = 1;
 
     @PostMapping
     public Film createFilm(@Valid @RequestBody Film film) {
-        film.setId(nextId.getAndIncrement());
+        film.setId(nextId++);
         films.put(film.getId(), film);
         log.info("Добавлен фильм: {}", film);
         return film;
@@ -37,8 +37,8 @@ public class FilmController {
     }
 
     @GetMapping
-    public Collection<Film> getAllFilms() {
+    public List<Film> getAllFilms() {
         log.info("Запрос всех фильмов. Количество: {}", films.size());
-        return films.values();
+        return new ArrayList<>(films.values());
     }
 }

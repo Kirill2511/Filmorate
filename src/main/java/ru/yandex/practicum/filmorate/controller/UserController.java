@@ -5,22 +5,22 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.User;
 
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @RestController
 @RequestMapping("/users")
 public class UserController {
-    private final Map<Integer, User> users = new ConcurrentHashMap<>();
-    private final AtomicInteger nextId = new AtomicInteger(1);
+    private final Map<Integer, User> users = new HashMap<>();
+    private int nextId = 1;
 
     @PostMapping
     public User createUser(@Valid @RequestBody User user) {
         validateAndSetUserName(user);
-        user.setId(nextId.getAndIncrement());
+        user.setId(nextId++);
         users.put(user.getId(), user);
         log.info("Создан пользователь: {}", user);
         return user;
@@ -39,9 +39,9 @@ public class UserController {
     }
 
     @GetMapping
-    public Collection<User> getAllUsers() {
+    public List<User> getAllUsers() {
         log.info("Запрос всех пользователей. Количество: {}", users.size());
-        return users.values();
+        return new ArrayList<>(users.values());
     }
 
     private void validateAndSetUserName(User user) {
