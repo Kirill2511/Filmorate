@@ -57,12 +57,7 @@ public class UserService {
             throw new IllegalArgumentException("Нельзя добавить себя в друзья");
         }
 
-        User user = userStorage.findById(userId);
-        User friend = userStorage.findById(friendId);
-
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
-
+        userStorage.addFriend(userId, friendId);
         log.info("Пользователи {} и {} стали друзьями", userId, friendId);
     }
 
@@ -70,12 +65,7 @@ public class UserService {
      * Удалить пользователя из друзей
      */
     public void removeFriend(Integer userId, Integer friendId) {
-        User user = userStorage.findById(userId);
-        User friend = userStorage.findById(friendId);
-
-        user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
-
+        userStorage.removeFriend(userId, friendId);
         log.info("Пользователи {} и {} больше не друзья", userId, friendId);
     }
 

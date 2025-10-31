@@ -53,10 +53,10 @@ public class FilmService {
      * Поставить лайк фильму
      */
     public void addLike(Integer filmId, Integer userId) {
-        Film film = filmStorage.findById(filmId);
         userStorage.findById(userId); // Проверяем существование пользователя
+        filmStorage.addLike(filmId, userId);
 
-        film.getLikes().add(userId);
+        Film film = filmStorage.findById(filmId);
         log.info("Пользователь {} поставил лайк фильму {} (всего лайков: {})",
                 userId, filmId, film.getLikes().size());
     }
@@ -65,10 +65,10 @@ public class FilmService {
      * Удалить лайк
      */
     public void removeLike(Integer filmId, Integer userId) {
-        Film film = filmStorage.findById(filmId);
         userStorage.findById(userId); // Проверяем существование пользователя
+        filmStorage.removeLike(filmId, userId);
 
-        film.getLikes().remove(userId);
+        Film film = filmStorage.findById(filmId);
         log.info("Пользователь {} удалил лайк у фильма {} (осталось лайков: {})",
                 userId, filmId, film.getLikes().size());
     }
