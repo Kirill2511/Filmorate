@@ -56,7 +56,7 @@ public class UserService {
             log.warn("Попытка добавить себя в друзья: userId={}", userId);
             throw new IllegalArgumentException("Нельзя добавить себя в друзья");
         }
-        
+
         User user = userStorage.findById(userId);
         User friend = userStorage.findById(friendId);
 
