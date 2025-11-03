@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,7 +14,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class FilmService {
     private final FilmStorage filmStorage;
-    private final UserStorage userStorage;
+    private final UserService userService;
 
     /**
      * Создать фильм
@@ -53,7 +52,7 @@ public class FilmService {
      * Поставить лайк фильму
      */
     public void addLike(Integer filmId, Integer userId) {
-        userStorage.findById(userId); // Проверяем существование пользователя
+        userService.getUserById(userId); // Проверяем существование пользователя
         filmStorage.addLike(filmId, userId);
 
         Film film = filmStorage.findById(filmId);
@@ -65,7 +64,7 @@ public class FilmService {
      * Удалить лайк
      */
     public void removeLike(Integer filmId, Integer userId) {
-        userStorage.findById(userId); // Проверяем существование пользователя
+        userService.getUserById(userId); // Проверяем существование пользователя
         filmStorage.removeLike(filmId, userId);
 
         Film film = filmStorage.findById(filmId);
