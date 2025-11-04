@@ -15,9 +15,13 @@ import java.util.Map;
 @RestControllerAdvice
 public class ValidationExceptionHandler {
 
+    /**
+     * Обработка ошибок валидации Bean Validation (аннотации @Valid)
+     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleValidationExceptions(MethodArgumentNotValidException ex) {
+        log.warn("Получена ошибка валидации запроса");
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach((error) -> {
             String fieldName;
@@ -28,15 +32,49 @@ public class ValidationExceptionHandler {
             }
             String errorMessage = error.getDefaultMessage();
             errors.put(fieldName, errorMessage);
-            log.error("Ошибка валидации поля {}: {}", fieldName, errorMessage);
+            log.error("Ошибка валидации поля '{}': {}", fieldName, errorMessage);
         });
+        log.debug("Всего ошибок валидации: {}", errors.size());
         return errors;
     }
 
-    @ExceptionHandler(RuntimeException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public Map<String, String> handleRuntimeExceptions(RuntimeException ex) {
-        log.error("Ошибка: {}", ex.getMessage());
+    /**
+     * Обработка кастомных исключений валидации - 400 Bad Request
+     */
+    @ExceptionHandler(ValidationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleValidationException(ValidationException ex) {
+        log.warn("Ошибка валидации: {}", ex.getMessage());
         return Map.of("error", ex.getMessage());
+    }
+
+    /**
+     * Обработка исключений "Не найдено" - 404 Not Found
+     */
+    @ExceptionHandler(NotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Map<String, String> handleNotFoundException(NotFoundException ex) {
+        log.warn("Объект не найден: {}", ex.getMessage());
+        return Map.of("error", ex.getMessage());
+    }
+
+    /**
+     * Обработка IllegalArgumentException - 400 Bad Request
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleIllegalArgumentException(IllegalArgumentException ex) {
+        log.warn("Некорректный аргумент: {}", ex.getMessage());
+        return Map.of("error", ex.getMessage());
+    }
+
+    /**
+     * Обработка всех остальных исключений - 500 Internal Server Error
+     */
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    public Map<String, String> handleInternalServerError(Exception ex) {
+        log.error("Внутренняя ошибка сервера: {}", ex.getMessage(), ex);
+        return Map.of("error", "Произошла внутренняя ошибка сервера");
     }
 }
