@@ -74,7 +74,7 @@ public class UserService {
      */
     public List<User> getFriends(Integer userId) {
         User user = userStorage.findById(userId);
-        return user.getFriends().stream()
+        return user.getFriends().keySet().stream()
                 .map(userStorage::findById)
                 .collect(Collectors.toList());
     }
@@ -86,8 +86,8 @@ public class UserService {
         User user = userStorage.findById(userId);
         User otherUser = userStorage.findById(otherUserId);
 
-        Set<Integer> commonFriendsIds = user.getFriends().stream()
-                .filter(otherUser.getFriends()::contains)
+        Set<Integer> commonFriendsIds = user.getFriends().keySet().stream()
+                .filter(otherUser.getFriends().keySet()::contains)
                 .collect(Collectors.toSet());
 
         return commonFriendsIds.stream()

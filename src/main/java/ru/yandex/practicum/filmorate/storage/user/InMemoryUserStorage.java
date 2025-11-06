@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.storage.user;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.utils.IdGenerator;
 
@@ -62,8 +63,16 @@ public class InMemoryUserStorage implements UserStorage {
         User user = findById(userId);
         User friend = findById(friendId);
 
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
+        // Если друг уже отправил запрос, подтверждаем дружбу
+        if (friend.getFriends().containsKey(userId) &&
+                friend.getFriends().get(userId) == FriendshipStatus.UNCONFIRMED) {
+            user.getFriends().put(friendId, FriendshipStatus.CONFIRMED);
+            friend.getFriends().put(userId, FriendshipStatus.CONFIRMED);
+        } else {
+            // Иначе создаем неподтвержденную связь
+            user.getFriends().put(friendId, FriendshipStatus.UNCONFIRMED);
+            friend.getFriends().put(userId, FriendshipStatus.UNCONFIRMED);
+        }
     }
 
     @Override
