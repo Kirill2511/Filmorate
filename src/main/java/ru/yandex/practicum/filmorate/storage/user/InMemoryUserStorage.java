@@ -64,14 +64,13 @@ public class InMemoryUserStorage implements UserStorage {
         User friend = findById(friendId);
 
         // Если друг уже отправил запрос, подтверждаем дружбу
-        if (friend.getFriends().containsKey(userId) &&
-                friend.getFriends().get(userId) == FriendshipStatus.UNCONFIRMED) {
-            user.getFriends().put(friendId, FriendshipStatus.CONFIRMED);
-            friend.getFriends().put(userId, FriendshipStatus.CONFIRMED);
+        if (friend.hasFriend(userId) &&
+                friend.getFriendshipStatus(userId) == FriendshipStatus.UNCONFIRMED) {
+            user.addFriend(friendId, FriendshipStatus.CONFIRMED);
+            friend.addFriend(userId, FriendshipStatus.CONFIRMED);
         } else {
-            // Иначе создаем неподтвержденную связь
-            user.getFriends().put(friendId, FriendshipStatus.UNCONFIRMED);
-            friend.getFriends().put(userId, FriendshipStatus.UNCONFIRMED);
+            // Иначе создаем неподтвержденную связь только со стороны инициатора
+            user.addFriend(friendId, FriendshipStatus.UNCONFIRMED);
         }
     }
 
@@ -80,8 +79,8 @@ public class InMemoryUserStorage implements UserStorage {
         User user = findById(userId);
         User friend = findById(friendId);
 
-        user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
+        user.removeFriend(friendId);
+        friend.removeFriend(userId);
     }
 
     private void validateAndSetUserName(User user) {
