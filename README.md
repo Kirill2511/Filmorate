@@ -4,7 +4,60 @@
 
 ## Схема базы данных
 
-![Database Schema](database_schema.png)
+```mermaid
+erDiagram
+    USERS ||--o{ FRIENDSHIP : "initiates"
+    USERS ||--o{ FRIENDSHIP : "receives"
+    USERS ||--o{ FILM_LIKES : "likes"
+    FILMS ||--o{ FILM_LIKES : "has_likes"
+    FILMS }o--|| MPA_RATING : "has_mpa"
+    FILMS ||--o{ FILM_GENRE : "has_genres"
+    GENRES ||--o{ FILM_GENRE : "assigned_to"
+
+    USERS {
+        int user_id PK
+        string email UK
+        string login UK
+        string name
+        date birthday
+    }
+
+    FRIENDSHIP {
+        int user_id PK,FK
+        int friend_id PK,FK
+        string status "UNCONFIRMED or CONFIRMED"
+    }
+
+    FILMS {
+        int film_id PK
+        string name
+        string description
+        date release_date
+        int duration
+        int mpa_id FK
+    }
+
+    MPA_RATING {
+        int mpa_id PK
+        string name UK
+        string description
+    }
+
+    GENRES {
+        int genre_id PK
+        string name UK
+    }
+
+    FILM_GENRE {
+        int film_id PK,FK
+        int genre_id PK,FK
+    }
+
+    FILM_LIKES {
+        int film_id PK,FK
+        int user_id PK,FK
+    }
+```
 
 ### Обозначения связей на диаграмме
 
