@@ -225,9 +225,7 @@ WHERE (user_id = ? AND friend_id = ?)
    OR (user_id = ? AND friend_id = ?);
 ```
 
-## Рекомендации по индексам для оптимизации
-
-Для повышения производительности запросов рекомендуется создать следующие индексы:
+## Индексы для оптимизации
 
 ```sql
 -- Оптимизация поиска друзей
@@ -250,8 +248,6 @@ CREATE INDEX idx_films_mpa_id ON films(mpa_id);
 CREATE UNIQUE INDEX idx_users_email ON users(email);
 CREATE UNIQUE INDEX idx_users_login ON users(login);
 ```
-
-### Почему эти индексы важны:
 
 1. **friendship индексы** — ускоряют запросы получения друзей и общих друзей (до 100x быстрее)
 2. **film_likes индексы** — ускоряют подсчет лайков и топ популярных фильмов
