@@ -233,7 +233,7 @@ public class UserDbStorageTest {
 
         // Пользователь 1 удалил пользователя 2 из друзей (односторонне)
         assertThat(user1.getFriends()).doesNotContainKey(2);
-        
+
         // Пользователь 2 всё ещё имеет пользователя 1 в друзьях
         assertThat(user2.getFriends()).containsKey(1);
     }
