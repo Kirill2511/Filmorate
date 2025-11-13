@@ -7,8 +7,9 @@ import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
 public class User {
@@ -27,5 +28,28 @@ public class User {
     @PastOrPresent(message = "Дата рождения не может быть в будущем")
     private LocalDate birthday;
 
-    private final Set<Integer> friends = new HashSet<>();
+    // Ключ - ID друга, значение - статус дружбы
+    private final Map<Integer, FriendshipStatus> friends = new HashMap<>();
+
+    // Переопределяем геттер для защиты внутреннего состояния
+    public Map<Integer, FriendshipStatus> getFriends() {
+        return Collections.unmodifiableMap(friends);
+    }
+
+    // Методы для управления друзьями
+    public void addFriend(Integer friendId, FriendshipStatus status) {
+        friends.put(friendId, status);
+    }
+
+    public void removeFriend(Integer friendId) {
+        friends.remove(friendId);
+    }
+
+    public FriendshipStatus getFriendshipStatus(Integer friendId) {
+        return friends.get(friendId);
+    }
+
+    public boolean hasFriend(Integer friendId) {
+        return friends.containsKey(friendId);
+    }
 }

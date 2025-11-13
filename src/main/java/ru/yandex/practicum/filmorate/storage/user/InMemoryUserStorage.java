@@ -3,6 +3,7 @@ package ru.yandex.practicum.filmorate.storage.user;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.FriendshipStatus;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.utils.IdGenerator;
 
@@ -62,8 +63,15 @@ public class InMemoryUserStorage implements UserStorage {
         User user = findById(userId);
         User friend = findById(friendId);
 
-        user.getFriends().add(friendId);
-        friend.getFriends().add(userId);
+        // Если друг уже отправил запрос, подтверждаем дружбу
+        if (friend.hasFriend(userId) &&
+                friend.getFriendshipStatus(userId) == FriendshipStatus.UNCONFIRMED) {
+            user.addFriend(friendId, FriendshipStatus.CONFIRMED);
+            friend.addFriend(userId, FriendshipStatus.CONFIRMED);
+        } else {
+            // Иначе создаем неподтвержденную связь только со стороны инициатора
+            user.addFriend(friendId, FriendshipStatus.UNCONFIRMED);
+        }
     }
 
     @Override
@@ -71,8 +79,12 @@ public class InMemoryUserStorage implements UserStorage {
         User user = findById(userId);
         User friend = findById(friendId);
 
-        user.getFriends().remove(friendId);
-        friend.getFriends().remove(userId);
+        if (user.hasFriend(friendId)) {
+            user.removeFriend(friendId);
+        }
+        if (friend.hasFriend(userId)) {
+            friend.removeFriend(userId);
+        }
     }
 
     private void validateAndSetUserName(User user) {
