@@ -79,8 +79,12 @@ public class InMemoryUserStorage implements UserStorage {
         User user = findById(userId);
         User friend = findById(friendId);
 
-        user.removeFriend(friendId);
-        friend.removeFriend(userId);
+        if (user.hasFriend(friendId)) {
+            user.removeFriend(friendId);
+        }
+        if (friend.hasFriend(userId)) {
+            friend.removeFriend(userId);
+        }
     }
 
     private void validateAndSetUserName(User user) {
