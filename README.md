@@ -133,14 +133,19 @@ WHERE f.film_id = ?;
 ### Топ N наиболее популярных фильмов (по количеству лайков)
 
 ```sql
-SELECT f.film_id, f.name, f.description, f.release_date, f.duration, 
-       mr.mpa_id, mr.name as mpa_name, 
+SELECT f.film_id,
+       f.name,
+       f.description,
+       f.release_date,
+       f.duration,
+       mr.mpa_id,
+       mr.name           as mpa_name,
        COUNT(fl.user_id) as likes_count
 FROM films f
-JOIN mpa_rating mr ON f.mpa_id = mr.mpa_id
-LEFT JOIN film_likes fl ON f.film_id = fl.film_id
+         JOIN mpa_rating mr ON f.mpa_id = mr.mpa_id
+         LEFT JOIN film_likes fl ON f.film_id = fl.film_id
 GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration, mr.mpa_id, mr.name
-ORDER BY likes_count DESC 
+ORDER BY likes_count DESC
 LIMIT ?;
 ```
 
@@ -174,9 +179,10 @@ WHERE f.user_id = ?;
 ```sql
 SELECT u.*
 FROM users u
-JOIN friendship f1 ON u.user_id = f1.friend_id
-JOIN friendship f2 ON u.user_id = f2.friend_id
-WHERE f1.user_id = ? AND f2.user_id = ?;
+         JOIN friendship f1 ON u.user_id = f1.friend_id
+         JOIN friendship f2 ON u.user_id = f2.friend_id
+WHERE f1.user_id = ?
+  AND f2.user_id = ?;
 ```
 
 ### Добавление лайка фильму
@@ -221,37 +227,6 @@ WHERE user_id = ?
 ```sql
 DELETE
 FROM friendship
-WHERE (user_id = ? AND friend_id = ?)
-   OR (user_id = ? AND friend_id = ?);
+WHERE user_id = ?
+  AND friend_id = ?;
 ```
-
-## Индексы для оптимизации
-
-```sql
--- Оптимизация поиска друзей
-CREATE INDEX idx_friendship_user_id ON friendship(user_id);
-CREATE INDEX idx_friendship_friend_id ON friendship(friend_id);
-CREATE INDEX idx_friendship_status ON friendship(status);
-
--- Оптимизация поиска лайков
-CREATE INDEX idx_film_likes_film_id ON film_likes(film_id);
-CREATE INDEX idx_film_likes_user_id ON film_likes(user_id);
-
--- Оптимизация поиска жанров фильма
-CREATE INDEX idx_film_genre_film_id ON film_genre(film_id);
-CREATE INDEX idx_film_genre_genre_id ON film_genre(genre_id);
-
--- Оптимизация поиска фильмов по рейтингу
-CREATE INDEX idx_films_mpa_id ON films(mpa_id);
-
--- Оптимизация поиска по email и login (если еще не созданы как UNIQUE)
-CREATE UNIQUE INDEX idx_users_email ON users(email);
-CREATE UNIQUE INDEX idx_users_login ON users(login);
-```
-
-1. **friendship индексы** — ускоряют запросы получения друзей и общих друзей (до 100x быстрее)
-2. **film_likes индексы** — ускоряют подсчет лайков и топ популярных фильмов
-3. **film_genre индексы** — ускоряют получение жанров фильма
-4. **films.mpa_id индекс** — ускоряет JOIN с таблицей MPA_RATING
-5. **users индексы** — обеспечивают уникальность и быстрый поиск по email/login
-

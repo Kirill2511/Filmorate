@@ -7,7 +7,6 @@ import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -77,10 +76,6 @@ public class FilmService {
      */
     public List<Film> getPopularFilms(Integer count) {
         int limit = (count != null && count > 0) ? count : 10;
-
-        return filmStorage.findAll().stream()
-                .sorted((f1, f2) -> Integer.compare(f2.getLikes().size(), f1.getLikes().size()))
-                .limit(limit)
-                .collect(Collectors.toList());
+        return filmStorage.findPopularFilms(limit);
     }
 }
