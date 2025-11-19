@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -66,6 +67,27 @@ public class ValidationExceptionHandler {
     public Map<String, String> handleIllegalArgumentException(IllegalArgumentException ex) {
         log.warn("Некорректный аргумент: {}", ex.getMessage());
         return Map.of("error", ex.getMessage());
+    }
+
+    /**
+     * Обработка нарушения ограничений целостности БД (например, FK constraint)
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public Map<String, String> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+        String message = ex.getMessage();
+        log.warn("Нарушение целостности данных: {}", message);
+
+        // Определяем, какое поле вызвало ошибку
+        if (message != null) {
+            if (message.contains("MPA_ID") || message.contains("mpa_id")) {
+                return Map.of("error", "Рейтинг MPA не найден");
+            } else if (message.contains("GENRE_ID") || message.contains("genre_id")) {
+                return Map.of("error", "Жанр не найден");
+            }
+        }
+
+        return Map.of("error", "Указаны некорректные данные");
     }
 
     /**
