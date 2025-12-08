@@ -9,10 +9,14 @@ erDiagram
     USERS ||--o{ FRIENDSHIP : "initiates"
     USERS ||--o{ FRIENDSHIP : "receives"
     USERS ||--o{ FILM_LIKES : "likes"
+    USERS ||--o{ REVIEWS : "writes"
+    USERS ||--o{ REVIEW_RATINGS : "rates"
     FILMS ||--o{ FILM_LIKES : "has_likes"
+    FILMS ||--o{ REVIEWS : "has_reviews"
     FILMS }o--|| MPA_RATING : "has_mpa"
     FILMS ||--o{ FILM_GENRE : "has_genres"
     GENRES ||--o{ FILM_GENRE : "assigned_to"
+    REVIEWS ||--o{ REVIEW_RATINGS : "has_ratings"
 
     USERS {
         int user_id PK
@@ -57,6 +61,21 @@ erDiagram
         int film_id PK,FK
         int user_id PK,FK
     }
+
+    REVIEWS {
+        int review_id PK
+        string content
+        boolean is_positive
+        int user_id FK
+        int film_id FK
+        int useful
+    }
+
+    REVIEW_RATINGS {
+        int review_id PK,FK
+        int user_id PK,FK
+        boolean is_like
+    }
 ```
 
 ### Обозначения связей на диаграмме
@@ -64,7 +83,11 @@ erDiagram
 - **"initiates"** — пользователь инициирует дружбу (отправляет запрос)
 - **"receives"** — пользователь получает запрос на дружбу
 - **"likes"** — пользователь ставит лайки фильмам
+- **"writes"** — пользователь пишет отзывы на фильмы
+- **"rates"** — пользователь оценивает отзывы (лайк/дизлайк)
 - **"has_likes"** — фильм имеет лайки от пользователей
+- **"has_reviews"** — фильм имеет отзывы
+- **"has_ratings"** — отзыв имеет оценки полезности
 - **"has_mpa"** — фильм имеет рейтинг MPA
 - **"has_genres"** — фильм имеет жанры
 - **"assigned_to"** — жанр назначен фильмам
@@ -107,6 +130,22 @@ erDiagram
 ### FILM_LIKES
 
 Лайки пользователей к фильмам.
+
+### REVIEWS
+
+Отзывы пользователей на фильмы. Каждый отзыв содержит:
+- `review_id` — уникальный идентификатор
+- `content` — текст отзыва
+- `is_positive` — тип отзыва (положительный/отрицательный)
+- `user_id` — автор отзыва
+- `film_id` — фильм, к которому относится отзыв
+- `useful` — рейтинг полезности (изменяется при добавлении лайков/дизлайков)
+
+### REVIEW_RATINGS
+
+Оценки полезности отзывов. Пользователи могут ставить лайки или дизлайки отзывам:
+- `is_like = TRUE` — лайк (увеличивает рейтинг на 1)
+- `is_like = FALSE` — дизлайк (уменьшает рейтинг на 1)
 
 ## Примеры запросов
 
@@ -230,3 +269,105 @@ FROM friendship
 WHERE user_id = ?
   AND friend_id = ?;
 ```
+
+### Получение отзыва по ID
+
+```sql
+SELECT review_id, content, is_positive, user_id, film_id, useful
+FROM reviews
+WHERE review_id = ?;
+```
+
+### Получение всех отзывов (отсортированных по полезности)
+
+```sql
+SELECT review_id, content, is_positive, user_id, film_id, useful
+FROM reviews
+ORDER BY useful DESC;
+```
+
+### Получение отзывов для фильма
+
+```sql
+SELECT review_id, content, is_positive, user_id, film_id, useful
+FROM reviews
+WHERE film_id = ?
+ORDER BY useful DESC
+LIMIT ?;
+```
+
+### Добавление лайка к отзыву
+
+```sql
+-- Удаляем предыдущую оценку пользователя, если была
+DELETE FROM review_ratings WHERE review_id = ? AND user_id = ?;
+
+-- Добавляем лайк
+INSERT INTO review_ratings (review_id, user_id, is_like) VALUES (?, ?, TRUE);
+
+-- Обновляем рейтинг полезности
+UPDATE reviews SET useful = (
+    SELECT COALESCE(SUM(CASE WHEN is_like = TRUE THEN 1 ELSE -1 END), 0)
+    FROM review_ratings WHERE review_id = ?
+) WHERE review_id = ?;
+```
+
+### Добавление дизлайка к отзыву
+
+```sql
+-- Удаляем предыдущую оценку пользователя, если была
+DELETE FROM review_ratings WHERE review_id = ? AND user_id = ?;
+
+-- Добавляем дизлайк
+INSERT INTO review_ratings (review_id, user_id, is_like) VALUES (?, ?, FALSE);
+
+-- Обновляем рейтинг полезности
+UPDATE reviews SET useful = (
+    SELECT COALESCE(SUM(CASE WHEN is_like = TRUE THEN 1 ELSE -1 END), 0)
+    FROM review_ratings WHERE review_id = ?
+) WHERE review_id = ?;
+```
+
+### Удаление лайка с отзыва
+
+```sql
+DELETE FROM review_ratings WHERE review_id = ? AND user_id = ? AND is_like = TRUE;
+
+-- Обновляем рейтинг полезности
+UPDATE reviews SET useful = (
+    SELECT COALESCE(SUM(CASE WHEN is_like = TRUE THEN 1 ELSE -1 END), 0)
+    FROM review_ratings WHERE review_id = ?
+) WHERE review_id = ?;
+```
+
+## API для работы с отзывами
+
+### POST /reviews
+Добавление нового отзыва.
+
+### PUT /reviews
+Редактирование существующего отзыва.
+
+### DELETE /reviews/{id}
+Удаление отзыва.
+
+### GET /reviews/{id}
+Получение отзыва по идентификатору.
+
+### GET /reviews?filmId={filmId}&count={count}
+Получение отзывов:
+- Если `filmId` указан — отзывы для конкретного фильма
+- Если `filmId` не указан — все отзывы
+- `count` — количество отзывов (по умолчанию 10)
+
+### PUT /reviews/{id}/like/{userId}
+Пользователь ставит лайк отзыву.
+
+### PUT /reviews/{id}/dislike/{userId}
+Пользователь ставит дизлайк отзыву.
+
+### DELETE /reviews/{id}/like/{userId}
+Пользователь удаляет лайк отзыву.
+
+### DELETE /reviews/{id}/dislike/{userId}
+Пользователь удаляет дизлайк отзыву.
