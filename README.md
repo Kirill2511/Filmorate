@@ -9,10 +9,14 @@ erDiagram
     USERS ||--o{ FRIENDSHIP : "initiates"
     USERS ||--o{ FRIENDSHIP : "receives"
     USERS ||--o{ FILM_LIKES : "likes"
+    USERS ||--o{ REVIEWS : "writes"
+    USERS ||--o{ REVIEW_RATINGS : "rates"
     FILMS ||--o{ FILM_LIKES : "has_likes"
+    FILMS ||--o{ REVIEWS : "has_reviews"
     FILMS }o--|| MPA_RATING : "has_mpa"
     FILMS ||--o{ FILM_GENRE : "has_genres"
     GENRES ||--o{ FILM_GENRE : "assigned_to"
+    REVIEWS ||--o{ REVIEW_RATINGS : "has_ratings"
 
     USERS {
         int user_id PK
@@ -57,6 +61,21 @@ erDiagram
         int film_id PK,FK
         int user_id PK,FK
     }
+
+    REVIEWS {
+        int review_id PK
+        string content
+        boolean is_positive
+        int user_id FK
+        int film_id FK
+        int useful
+    }
+
+    REVIEW_RATINGS {
+        int review_id PK,FK
+        int user_id PK,FK
+        boolean is_like
+    }
 ```
 
 ### Обозначения связей на диаграмме
@@ -64,7 +83,11 @@ erDiagram
 - **"initiates"** — пользователь инициирует дружбу (отправляет запрос)
 - **"receives"** — пользователь получает запрос на дружбу
 - **"likes"** — пользователь ставит лайки фильмам
+- **"writes"** — пользователь пишет отзывы на фильмы
+- **"rates"** — пользователь оценивает отзывы (лайк/дизлайк)
 - **"has_likes"** — фильм имеет лайки от пользователей
+- **"has_reviews"** — фильм имеет отзывы
+- **"has_ratings"** — отзыв имеет оценки полезности
 - **"has_mpa"** — фильм имеет рейтинг MPA
 - **"has_genres"** — фильм имеет жанры
 - **"assigned_to"** — жанр назначен фильмам
@@ -108,125 +131,30 @@ erDiagram
 
 Лайки пользователей к фильмам.
 
-## Примеры запросов
+### REVIEWS
 
-### Получение всех фильмов
+Отзывы пользователей на фильмы. Каждый отзыв содержит:
+- `review_id` — уникальный идентификатор
+- `content` — текст отзыва
+- `is_positive` — тип отзыва (положительный/отрицательный)
+- `user_id` — автор отзыва
+- `film_id` — фильм, к которому относится отзыв
+- `useful` — рейтинг полезности (изменяется при добавлении лайков/дизлайков)
 
-```sql
-SELECT f.*, mr.name as mpa_name
-FROM films f
-         JOIN mpa_rating mr ON f.mpa_id = mr.mpa_id
-ORDER BY f.film_id;
-```
+### REVIEW_RATINGS
 
-### Получение фильма по ID с жанрами
+Оценки полезности отзывов. Пользователи могут ставить лайки или дизлайки отзывам:
+- `is_like = TRUE` — лайк (увеличивает рейтинг на 1)
+- `is_like = FALSE` — дизлайк (уменьшает рейтинг на 1)
 
-```sql
-SELECT f.*, mr.name as mpa_name, g.name as genre_name
-FROM films f
-         JOIN mpa_rating mr ON f.mpa_id = mr.mpa_id
-         LEFT JOIN film_genre fg ON f.film_id = fg.film_id
-         LEFT JOIN genres g ON fg.genre_id = g.genre_id
-WHERE f.film_id = ?;
-```
+## SQL Запросы
 
-### Топ N наиболее популярных фильмов (по количеству лайков)
+Примеры SQL запросов для работы с базой данных доступны в файле [SQL.md](SQL.md)
 
-```sql
-SELECT f.film_id,
-       f.name,
-       f.description,
-       f.release_date,
-       f.duration,
-       mr.mpa_id,
-       mr.name           as mpa_name,
-       COUNT(fl.user_id) as likes_count
-FROM films f
-         JOIN mpa_rating mr ON f.mpa_id = mr.mpa_id
-         LEFT JOIN film_likes fl ON f.film_id = fl.film_id
-GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration, mr.mpa_id, mr.name
-ORDER BY likes_count DESC
-LIMIT ?;
-```
+## API
 
-### Получение всех пользователей
+Подробная документация REST API доступна в файле [API.md](API.md)
 
-```sql
-SELECT *
-FROM users
-ORDER BY user_id;
-```
+## API
 
-### Получение пользователя по ID
-
-```sql
-SELECT *
-FROM users
-WHERE user_id = ?;
-```
-
-### Получение списка друзей пользователя
-
-```sql
-SELECT u.*
-FROM users u
-         JOIN friendship f ON u.user_id = f.friend_id
-WHERE f.user_id = ?;
-```
-
-### Получение списка общих друзей двух пользователей
-
-```sql
-SELECT u.*
-FROM users u
-         JOIN friendship f1 ON u.user_id = f1.friend_id
-         JOIN friendship f2 ON u.user_id = f2.friend_id
-WHERE f1.user_id = ?
-  AND f2.user_id = ?;
-```
-
-### Добавление лайка фильму
-
-```sql
-INSERT INTO film_likes (film_id, user_id)
-VALUES (?, ?);
-```
-
-### Удаление лайка
-
-```sql
-DELETE
-FROM film_likes
-WHERE film_id = ?
-  AND user_id = ?;
-```
-
-### Добавление друга (неподтверждённая дружба)
-
-```sql
-INSERT INTO friendship (user_id, friend_id, status)
-VALUES (?, ?, 'UNCONFIRMED');
-```
-
-### Подтверждение дружбы
-
-```sql
-UPDATE friendship
-SET status = 'CONFIRMED'
-WHERE user_id = ?
-  AND friend_id = ?;
-
-UPDATE friendship
-SET status = 'CONFIRMED'
-WHERE user_id = ?
-  AND friend_id = ?;
-```
-
-### Удаление из друзей
-
-```sql
-DELETE
-FROM friendship
-WHERE user_id = ?
-  AND friend_id = ?;
-```
+Подробная документация REST API доступна в файле [API.md](API.md).
