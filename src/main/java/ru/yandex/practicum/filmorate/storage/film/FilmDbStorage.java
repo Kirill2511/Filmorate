@@ -185,19 +185,24 @@ public class FilmDbStorage implements FilmStorage {
         if (genreId != null) {
             baseQuery.append("JOIN film_genre fg ON f.film_id = fg.film_id\n");
         }
-        // банально удобнее сделать так, чем учитывать что первое год или жанр
-        baseQuery.append("WHERE 1=1");
+
+        List<String> conditions = new ArrayList<>();
 
         if (year != null) {
-            baseQuery.append(" AND EXTRACT(YEAR FROM f.release_date) = ?");
+            conditions.add("EXTRACT(YEAR FROM f.release_date) = ?");
+        }
+        if (genreId != null) {
+            conditions.add("fg.genre_id = ?");
         }
 
-        if (genreId != null) {
-            baseQuery.append(" AND fg.genre_id = ?");
+        if (!conditions.isEmpty()) {
+            baseQuery.append("WHERE ")
+                    .append(String.join(" AND ", conditions))
+                    .append("\n");
         }
 
         baseQuery.append("""
-                \nGROUP BY f.film_id
+                GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
                 ORDER BY likes_count DESC
                 LIMIT ?
                 """);
