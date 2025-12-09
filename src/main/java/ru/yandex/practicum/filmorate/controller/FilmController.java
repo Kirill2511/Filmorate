@@ -1,8 +1,11 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
@@ -11,6 +14,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
+@Validated
 @RequestMapping("/films")
 @RequiredArgsConstructor
 public class FilmController {
@@ -47,7 +51,12 @@ public class FilmController {
     }
 
     @GetMapping("/popular")
-    public List<Film> getPopularFilms(@RequestParam(defaultValue = "10") Integer count) {
-        return filmService.getPopularFilms(count);
+    public List<Film> getPopularFilms(@RequestParam(defaultValue = "10")
+                                      @Positive(message = "Count should be positive integer") Integer count,
+                                      @RequestParam(required = false)
+                                      @Min(value = 1895, message = "Year should be after or equal to 1985") Integer year,
+                                      @RequestParam(required = false)
+                                      @Positive(message = "genre_id should be positive integer") Integer genreId) {
+        return filmService.getPopularFilms(count, year, genreId);
     }
 }
