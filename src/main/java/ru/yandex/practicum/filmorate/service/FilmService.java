@@ -70,6 +70,7 @@ public class FilmService {
         log.info("Пользователь {} удалил лайк у фильма {} (осталось лайков: {})",
                 userId, filmId, film.getLikes().size());
     }
+
     /**
      * Получить список из первых count фильмов по количеству лайков
      */
