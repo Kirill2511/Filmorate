@@ -54,9 +54,9 @@ public class FilmController {
     public List<Film> getPopularFilms(@RequestParam(defaultValue = "10")
                                       @Positive(message = "Count should be positive integer") Integer count,
                                       @RequestParam(required = false)
-                                      @Min(value = 1895, message = "Year should be after or equal to 1985") Integer year,
+                                      @Min(value = 1895, message = "Year should be after or equal to 1895") Integer year,
                                       @RequestParam(required = false)
-                                      @Positive(message = "genre_id should be positive integer") Integer genreId) {
+                                      @Positive(message = "genreId should be positive integer") Integer genreId) {
         return filmService.getPopularFilms(count, year, genreId);
     }
 }
