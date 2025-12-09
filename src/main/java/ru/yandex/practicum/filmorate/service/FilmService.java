@@ -70,12 +70,11 @@ public class FilmService {
         log.info("Пользователь {} удалил лайк у фильма {} (осталось лайков: {})",
                 userId, filmId, film.getLikes().size());
     }
-
     /**
      * Получить список из первых count фильмов по количеству лайков
      */
-    public List<Film> getPopularFilms(Integer count) {
+    public List<Film> getPopularFilms(Integer count, Integer year, Integer genreId) {
         int limit = (count != null && count > 0) ? count : 10;
-        return filmStorage.findPopularFilms(limit);
+        return filmStorage.findPopularFilms(limit, year, genreId);
     }
 }
