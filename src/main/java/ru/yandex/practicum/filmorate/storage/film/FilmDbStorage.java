@@ -33,8 +33,8 @@ public class FilmDbStorage implements FilmStorage {
                 f.mpa_id,
                 m.name AS mpa_name,
                 ARRAY_AGG(l.user_id) AS likes,
-                ARRAY_AGG(g.genre_id) AS genre_ids,
-                ARRAY_AGG(g.name) AS genre_names,
+                ARRAY_AGG(g.genre_id ORDER BY g.genre_id) AS genre_ids,
+                ARRAY_AGG(g.name ORDER BY g.genre_id) AS genre_names,
                 COUNT(l.user_id) AS likes_count
             FROM films f
             LEFT JOIN mpa_rating m ON f.mpa_id = m.mpa_id
@@ -196,7 +196,7 @@ public class FilmDbStorage implements FilmStorage {
                     .append(String.join(" AND ", conditions))
                     .append("\n");
         }
-        baseQuery.append(GROUP_BY).append("ORDER BY likes_count DESC LIMIT ?");
+        baseQuery.append(GROUP_BY).append("\nORDER BY likes_count DESC LIMIT ?");
 
         return baseQuery.toString();
     }
