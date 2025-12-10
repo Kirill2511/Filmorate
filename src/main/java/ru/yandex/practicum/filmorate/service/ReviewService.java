@@ -26,7 +26,7 @@ public class ReviewService {
         filmService.getFilmById(review.getFilmId());
 
         Review createdReview = reviewStorage.create(review);
-        log.info("Создан отзыв: id={}, filmId={}, userId={}", 
+        log.info("Создан отзыв: id={}, filmId={}, userId={}",
                 createdReview.getReviewId(), createdReview.getFilmId(), createdReview.getUserId());
         return createdReview;
     }
@@ -60,17 +60,18 @@ public class ReviewService {
 
     /**
      * Получить отзывы по ID фильма или все отзывы
+     *
      * @param filmId ID фильма (если null, возвращает все отзывы)
-     * @param count количество отзывов (по умолчанию 10)
+     * @param count  количество отзывов (по умолчанию 10)
      */
     public List<Review> getReviews(Integer filmId, Integer count) {
         int limit = (count != null && count > 0) ? count : 10;
-        
+
         if (filmId != null) {
             // Проверяем существование фильма
             filmService.getFilmById(filmId);
         }
-        
+
         return reviewStorage.findByFilmId(filmId, limit);
     }
 
@@ -80,9 +81,9 @@ public class ReviewService {
     public void addLike(Integer reviewId, Integer userId) {
         userService.getUserById(userId); // Проверяем существование пользователя
         reviewStorage.addLike(reviewId, userId);
-        
+
         Integer useful = reviewStorage.getUsefulRating(reviewId);
-        log.info("Пользователь {} поставил лайк отзыву {} (рейтинг: {})", 
+        log.info("Пользователь {} поставил лайк отзыву {} (рейтинг: {})",
                 userId, reviewId, useful);
     }
 
@@ -92,9 +93,9 @@ public class ReviewService {
     public void addDislike(Integer reviewId, Integer userId) {
         userService.getUserById(userId); // Проверяем существование пользователя
         reviewStorage.addDislike(reviewId, userId);
-        
+
         Integer useful = reviewStorage.getUsefulRating(reviewId);
-        log.info("Пользователь {} поставил дизлайк отзыву {} (рейтинг: {})", 
+        log.info("Пользователь {} поставил дизлайк отзыву {} (рейтинг: {})",
                 userId, reviewId, useful);
     }
 
@@ -104,9 +105,9 @@ public class ReviewService {
     public void removeLike(Integer reviewId, Integer userId) {
         userService.getUserById(userId); // Проверяем существование пользователя
         reviewStorage.removeLike(reviewId, userId);
-        
+
         Integer useful = reviewStorage.getUsefulRating(reviewId);
-        log.info("Пользователь {} удалил лайк у отзыва {} (рейтинг: {})", 
+        log.info("Пользователь {} удалил лайк у отзыва {} (рейтинг: {})",
                 userId, reviewId, useful);
     }
 
@@ -116,9 +117,9 @@ public class ReviewService {
     public void removeDislike(Integer reviewId, Integer userId) {
         userService.getUserById(userId); // Проверяем существование пользователя
         reviewStorage.removeDislike(reviewId, userId);
-        
+
         Integer useful = reviewStorage.getUsefulRating(reviewId);
-        log.info("Пользователь {} удалил дизлайк у отзыва {} (рейтинг: {})", 
+        log.info("Пользователь {} удалил дизлайк у отзыва {} (рейтинг: {})",
                 userId, reviewId, useful);
     }
 }

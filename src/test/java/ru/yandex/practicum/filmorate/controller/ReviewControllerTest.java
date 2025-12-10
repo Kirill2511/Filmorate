@@ -38,12 +38,7 @@ class ReviewControllerTest {
     @Test
     void shouldCreateReview() throws Exception {
         String reviewJson = """
-                {
-                    "content": "Test review content",
-                    "isPositive": true,
-                    "userId": 1,
-                    "filmId": 1
-                }
+                {"content": "Test review content", "isPositive": true, "userId": 1, "filmId": 1}
                 """;
 
         mockMvc.perform(post("/reviews")
@@ -61,13 +56,7 @@ class ReviewControllerTest {
     @Test
     void shouldUpdateReview() throws Exception {
         String updateJson = """
-                {
-                    "reviewId": 1,
-                    "content": "Updated review content",
-                    "isPositive": false,
-                    "userId": 1,
-                    "filmId": 1
-                }
+                {"reviewId": 1, "content": "Updated review content", "isPositive": false, "userId": 1, "filmId": 1}
                 """;
 
         mockMvc.perform(put("/reviews")
