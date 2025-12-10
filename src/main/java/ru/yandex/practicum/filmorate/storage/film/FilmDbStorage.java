@@ -4,25 +4,58 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.model.Mpa;
 
 import java.sql.Date;
 import java.sql.PreparedStatement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Repository
 @Primary
 @RequiredArgsConstructor
 public class FilmDbStorage implements FilmStorage {
+
+    private static final String BASE_SELECT_QUERY = """
+            SELECT
+                f.film_id,
+                f.name,
+                f.description,
+                f.release_date,
+                f.duration,
+                f.mpa_id,
+                m.name AS mpa_name,
+                ARRAY_AGG(l.user_id) AS likes,
+                ARRAY_AGG(g.genre_id) AS genre_ids,
+                ARRAY_AGG(g.name) AS genre_names,
+                COUNT(l.user_id) AS likes_count
+            FROM films f
+            LEFT JOIN mpa_rating m ON f.mpa_id = m.mpa_id
+            LEFT JOIN film_likes AS l ON f.film_id = l.film_id
+            LEFT JOIN film_genre AS fg ON f.film_id = fg.film_id
+            LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
+            """;
+
+    private static final String GROUP_BY = """
+            GROUP BY
+                f.film_id,
+                f.name,
+                f.description,
+                f.release_date,
+                f.duration,
+                f.mpa_id,
+                m.name
+            """;
+
     private final JdbcTemplate jdbcTemplate;
+    private final FilmRowMapper mapper;
 
     @Override
     public Film create(Film film) {
@@ -76,18 +109,9 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public List<Film> findAll() {
-        String sql = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, " +
-                "f.mpa_id, m.name AS mpa_name " +
-                "FROM films f " +
-                "JOIN mpa_rating m ON f.mpa_id = m.mpa_id";
+        String sql = BASE_SELECT_QUERY + "\n" + GROUP_BY;
 
-        List<Film> films = jdbcTemplate.query(sql, filmRowMapper());
-
-        // Загружаем жанры и лайки для каждого фильма
-        for (Film film : films) {
-            film.setGenres(loadGenres(film.getId()));
-            film.setLikes(loadLikes(film.getId()));
-        }
+        List<Film> films = jdbcTemplate.query(sql, mapper);
 
         log.debug("Получен список всех фильмов, количество: {}", films.size());
         return films;
@@ -95,21 +119,15 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public Film findById(Integer id) {
-        String sql = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, " +
-                "f.mpa_id, m.name AS mpa_name " +
-                "FROM films f " +
-                "JOIN mpa_rating m ON f.mpa_id = m.mpa_id " +
-                "WHERE f.film_id = ?";
+        String sql = BASE_SELECT_QUERY + "\nWHERE f.film_id = ?\n" + GROUP_BY;
 
-        List<Film> films = jdbcTemplate.query(sql, filmRowMapper(), id);
+        List<Film> films = jdbcTemplate.query(sql, mapper, id);
 
         if (films.isEmpty()) {
             throw new NotFoundException("Фильм с id " + id + " не найден");
         }
 
         Film film = films.getFirst();
-        film.setGenres(loadGenres(id));
-        film.setLikes(loadLikes(id));
 
         log.debug("Получен фильм с id: {}", id);
         return film;
@@ -152,12 +170,7 @@ public class FilmDbStorage implements FilmStorage {
         String sql = buildQuery(year, genreId);
         Object[] params = buildParams(year, genreId, limit);
 
-        List<Film> films = jdbcTemplate.query(sql, filmRowMapper(), params);
-
-        for (Film film : films) {
-            film.setGenres(loadGenres(film.getId()));
-            film.setLikes(loadLikes(film.getId()));
-        }
+        List<Film> films = jdbcTemplate.query(sql, mapper, params);
 
         log.debug("Получен список популярных фильмов, количество: {}", films.size());
         return films;
@@ -167,24 +180,7 @@ public class FilmDbStorage implements FilmStorage {
      * Строит запрос, основываясь на наличии года и жанра
      */
     private String buildQuery(Integer year, Integer genreId) {
-        StringBuilder baseQuery = new StringBuilder("""
-                SELECT
-                    f.film_id,
-                    f.name,
-                    f.description,
-                    f.release_date,
-                    f.duration,
-                    f.mpa_id,
-                    m.name AS mpa_name,
-                    COUNT(fl.user_id) AS likes_count
-                FROM films f
-                JOIN mpa_rating m ON f.mpa_id = m.mpa_id
-                LEFT JOIN film_likes fl ON f.film_id = fl.film_id
-                """);
-
-        if (genreId != null) {
-            baseQuery.append("JOIN film_genre fg ON f.film_id = fg.film_id\n");
-        }
+        StringBuilder baseQuery = new StringBuilder(BASE_SELECT_QUERY);
 
         List<String> conditions = new ArrayList<>();
 
@@ -200,12 +196,7 @@ public class FilmDbStorage implements FilmStorage {
                     .append(String.join(" AND ", conditions))
                     .append("\n");
         }
-
-        baseQuery.append("""
-                GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
-                ORDER BY likes_count DESC
-                LIMIT ?
-                """);
+        baseQuery.append(GROUP_BY).append("ORDER BY likes_count DESC LIMIT ?");
 
         return baseQuery.toString();
     }
@@ -232,50 +223,5 @@ public class FilmDbStorage implements FilmStorage {
         }
 
         jdbcTemplate.batchUpdate(sql, batchArgs);
-    }
-
-    private RowMapper<Film> filmRowMapper() {
-        return (rs, rowNum) -> {
-            Film film = new Film();
-            film.setId(rs.getInt("film_id"));
-            film.setName(rs.getString("name"));
-            film.setDescription(rs.getString("description"));
-            film.setReleaseDate(rs.getDate("release_date").toLocalDate());
-            film.setDuration(rs.getInt("duration"));
-
-            Mpa mpa = new Mpa();
-            mpa.setId(rs.getInt("mpa_id"));
-            mpa.setName(rs.getString("mpa_name"));
-            film.setMpa(mpa);
-
-            return film;
-        };
-    }
-
-    private LinkedHashSet<Genre> loadGenres(int filmId) {
-        String sql = "SELECT g.genre_id, g.name " +
-                "FROM film_genre fg " +
-                "JOIN genres g ON fg.genre_id = g.genre_id " +
-                "WHERE fg.film_id = ? " +
-                "ORDER BY g.genre_id";
-
-        List<Genre> genreList = jdbcTemplate.query(sql, (rs, rowNum) -> {
-            Genre genre = new Genre();
-            genre.setId(rs.getInt("genre_id"));
-            genre.setName(rs.getString("name"));
-            return genre;
-        }, filmId);
-
-        return new LinkedHashSet<>(genreList);
-    }
-
-    private HashSet<Integer> loadLikes(int filmId) {
-        String sql = "SELECT user_id FROM film_likes WHERE film_id = ?";
-
-        List<Integer> likesList = jdbcTemplate.query(sql,
-                (rs, rowNum) -> rs.getInt("user_id"),
-                filmId);
-
-        return new HashSet<>(likesList);
     }
 }
