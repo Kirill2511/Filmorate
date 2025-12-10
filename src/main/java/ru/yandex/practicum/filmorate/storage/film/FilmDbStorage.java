@@ -22,7 +22,6 @@ import java.util.*;
 @Primary
 @RequiredArgsConstructor
 public class FilmDbStorage implements FilmStorage {
-
     private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -149,17 +148,11 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public List<Film> findPopularFilms(int limit) {
-        String sql = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, " +
-                "f.mpa_id, m.name AS mpa_name, COUNT(fl.user_id) AS likes_count " +
-                "FROM films f " +
-                "JOIN mpa_rating m ON f.mpa_id = m.mpa_id " +
-                "LEFT JOIN film_likes fl ON f.film_id = fl.film_id " +
-                "GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name " +
-                "ORDER BY likes_count DESC " +
-                "LIMIT ?";
+    public List<Film> findPopularFilms(Integer limit, Integer year, Integer genreId) {
+        String sql = buildQuery(year, genreId);
+        Object[] params = buildParams(year, genreId, limit);
 
-        List<Film> films = jdbcTemplate.query(sql, filmRowMapper(), limit);
+        List<Film> films = jdbcTemplate.query(sql, filmRowMapper(), params);
 
         for (Film film : films) {
             film.setGenres(loadGenres(film.getId()));
@@ -168,6 +161,66 @@ public class FilmDbStorage implements FilmStorage {
 
         log.debug("Получен список популярных фильмов, количество: {}", films.size());
         return films;
+    }
+
+    /**
+     * Строит запрос, основываясь на наличии года и жанра
+     */
+    private String buildQuery(Integer year, Integer genreId) {
+        StringBuilder baseQuery = new StringBuilder("""
+                SELECT
+                    f.film_id,
+                    f.name,
+                    f.description,
+                    f.release_date,
+                    f.duration,
+                    f.mpa_id,
+                    m.name AS mpa_name,
+                    COUNT(fl.user_id) AS likes_count
+                FROM films f
+                JOIN mpa_rating m ON f.mpa_id = m.mpa_id
+                LEFT JOIN film_likes fl ON f.film_id = fl.film_id
+                """);
+
+        if (genreId != null) {
+            baseQuery.append("JOIN film_genre fg ON f.film_id = fg.film_id\n");
+        }
+
+        List<String> conditions = new ArrayList<>();
+
+        if (year != null) {
+            conditions.add("EXTRACT(YEAR FROM f.release_date) = ?");
+        }
+        if (genreId != null) {
+            conditions.add("fg.genre_id = ?");
+        }
+
+        if (!conditions.isEmpty()) {
+            baseQuery.append("WHERE ")
+                    .append(String.join(" AND ", conditions))
+                    .append("\n");
+        }
+
+        baseQuery.append("""
+                GROUP BY f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, m.name
+                ORDER BY likes_count DESC
+                LIMIT ?
+                """);
+
+        return baseQuery.toString();
+    }
+
+    private Object[] buildParams(Integer year, Integer genreId, Integer limit) {
+        List<Integer> params = new ArrayList<>();
+        if (year != null) {
+            params.add(year);
+        }
+        if (genreId != null) {
+            params.add(genreId);
+        }
+        params.add(limit);
+
+        return params.toArray();
     }
 
     private void saveGenres(int filmId, Set<Genre> genres) {
