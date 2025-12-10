@@ -32,10 +32,10 @@ public class FilmDbStorage implements FilmStorage {
                 f.duration,
                 f.mpa_id,
                 m.name AS mpa_name,
-                ARRAY_AGG(l.user_id) AS likes,
-                ARRAY_AGG(g.genre_id ORDER BY g.genre_id) AS genre_ids,
-                ARRAY_AGG(g.name ORDER BY g.genre_id) AS genre_names,
-                COUNT(l.user_id) AS likes_count
+                ARRAY_AGG(DISTINCT l.user_id) AS likes,
+                ARRAY_AGG(DISTINCT g.genre_id ORDER BY g.genre_id) AS genre_ids,
+                ARRAY_AGG(DISTINCT g.name ORDER BY g.genre_id) AS genre_names,
+                COUNT(DISTINCT l.user_id) AS likes_count
             FROM films f
             LEFT JOIN mpa_rating m ON f.mpa_id = m.mpa_id
             LEFT JOIN film_likes AS l ON f.film_id = l.film_id
