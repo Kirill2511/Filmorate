@@ -46,6 +46,10 @@ public class FilmDbStorage implements FilmStorage {
             saveGenres(film.getId(), film.getGenres());
         }
 
+        if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
+            addFilmDirectors(film.getId(), film.getDirectors());
+        }
+
         log.debug("Создан фильм с id: {}", film.getId());
         return findById(film.getId());
     }
@@ -168,6 +172,16 @@ public class FilmDbStorage implements FilmStorage {
 
         log.debug("Получен список популярных фильмов, количество: {}", films.size());
         return films;
+    }
+
+    private void addFilmDirectors(int filmId, Set<Integer> directorsId) {
+        String sql = "INSERT INTO film_directors (film_id, director_id) VALUES (?, ?)";
+
+        jdbcTemplate.batchUpdate(sql, directorsId, directorsId.size(),
+                (ps, directorId) -> {
+                    ps.setInt(1, filmId);
+                    ps.setInt(2, directorId);
+                });
     }
 
     private void saveGenres(int filmId, Set<Genre> genres) {
