@@ -74,8 +74,7 @@ public class FilmService {
     /**
      * Получить список из первых count фильмов по количеству лайков
      */
-    public List<Film> getPopularFilms(Integer count) {
-        int limit = (count != null && count > 0) ? count : 10;
-        return filmStorage.findPopularFilms(limit);
+    public List<Film> getPopularFilms(Integer count, Integer year, Integer genreId) {
+        return filmStorage.findPopularFilms(count, year, genreId);
     }
 }
