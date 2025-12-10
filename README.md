@@ -68,7 +68,6 @@ erDiagram
         boolean is_positive
         int user_id FK
         int film_id FK
-        int useful
     }
 
     REVIEW_RATINGS {
@@ -140,7 +139,8 @@ erDiagram
 - `is_positive` — тип отзыва (положительный/отрицательный)
 - `user_id` — автор отзыва
 - `film_id` — фильм, к которому относится отзыв
-- `useful` — рейтинг полезности (изменяется при добавлении лайков/дизлайков)
+
+Рейтинг полезности (`useful`) вычисляется динамически на основе данных из таблицы `REVIEW_RATINGS`.
 
 ### REVIEW_RATINGS
 

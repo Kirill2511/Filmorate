@@ -66,8 +66,7 @@ CREATE TABLE IF NOT EXISTS reviews
     content     VARCHAR(1000) NOT NULL,
     is_positive BOOLEAN       NOT NULL,
     user_id     INTEGER REFERENCES users (user_id) ON DELETE CASCADE,
-    film_id     INTEGER REFERENCES films (film_id) ON DELETE CASCADE,
-    useful      INTEGER DEFAULT 0
+    film_id     INTEGER REFERENCES films (film_id) ON DELETE CASCADE
 );
 
 -- Таблица оценок отзывов (лайки/дизлайки)
@@ -80,6 +79,5 @@ CREATE TABLE IF NOT EXISTS review_ratings
 );
 
 -- Индексы для оптимизации запросов
-CREATE INDEX IF NOT EXISTS idx_reviews_film_id ON reviews(film_id);
-CREATE INDEX IF NOT EXISTS idx_reviews_useful ON reviews(useful DESC);
-CREATE INDEX IF NOT EXISTS idx_review_ratings_review_id ON review_ratings(review_id);
+CREATE INDEX IF NOT EXISTS idx_reviews_film_id ON reviews (film_id);
+CREATE INDEX IF NOT EXISTS idx_review_ratings_review_id ON review_ratings (review_id);

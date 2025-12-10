@@ -24,8 +24,8 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public Review create(Review review) {
-        String sql = "INSERT INTO reviews (content, is_positive, user_id, film_id, useful) " +
-                "VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO reviews (content, is_positive, user_id, film_id) " +
+                "VALUES (?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
         jdbcTemplate.update(connection -> {
@@ -34,7 +34,6 @@ public class ReviewDbStorage implements ReviewStorage {
             ps.setBoolean(2, review.getIsPositive());
             ps.setInt(3, review.getUserId());
             ps.setInt(4, review.getFilmId());
-            ps.setInt(5, 0); // Изначально рейтинг = 0
             return ps;
         }, keyHolder);
 
@@ -73,8 +72,13 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public Review findById(Integer reviewId) {
-        String sql = "SELECT review_id, content, is_positive, user_id, film_id, useful " +
-                "FROM reviews WHERE review_id = ?";
+        String sql = "SELECT r.review_id, r.content, r.is_positive, r.user_id, r.film_id, " +
+                "COALESCE(SUM(CASE WHEN rr.is_like = TRUE THEN 1 WHEN rr.is_like = FALSE THEN -1 ELSE 0 END), 0) AS useful "
+                +
+                "FROM reviews AS r " +
+                "LEFT JOIN review_ratings AS rr ON r.review_id = rr.review_id " +
+                "WHERE r.review_id = ? " +
+                "GROUP BY r.review_id, r.content, r.is_positive, r.user_id, r.film_id";
 
         List<Review> reviews = jdbcTemplate.query(sql, reviewRowMapper(), reviewId);
 
@@ -88,8 +92,13 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public List<Review> findAll() {
-        String sql = "SELECT review_id, content, is_positive, user_id, film_id, useful " +
-                "FROM reviews ORDER BY useful DESC";
+        String sql = "SELECT r.review_id, r.content, r.is_positive, r.user_id, r.film_id, " +
+                "COALESCE(SUM(CASE WHEN rr.is_like = TRUE THEN 1 WHEN rr.is_like = FALSE THEN -1 ELSE 0 END), 0) AS useful "
+                +
+                "FROM reviews AS r " +
+                "LEFT JOIN review_ratings AS rr ON r.review_id = rr.review_id " +
+                "GROUP BY r.review_id, r.content, r.is_positive, r.user_id, r.film_id " +
+                "ORDER BY useful DESC";
 
         List<Review> reviews = jdbcTemplate.query(sql, reviewRowMapper());
 
@@ -103,12 +112,23 @@ public class ReviewDbStorage implements ReviewStorage {
         List<Review> reviews;
 
         if (filmId == null) {
-            sql = "SELECT review_id, content, is_positive, user_id, film_id, useful " +
-                    "FROM reviews ORDER BY useful DESC LIMIT ?";
+            sql = "SELECT r.review_id, r.content, r.is_positive, r.user_id, r.film_id, " +
+                    "COALESCE(SUM(CASE WHEN rr.is_like = TRUE THEN 1 WHEN rr.is_like = FALSE THEN -1 ELSE 0 END), 0) AS useful "
+                    +
+                    "FROM reviews AS r " +
+                    "LEFT JOIN review_ratings AS rr ON r.review_id = rr.review_id " +
+                    "GROUP BY r.review_id, r.content, r.is_positive, r.user_id, r.film_id " +
+                    "ORDER BY useful DESC LIMIT ?";
             reviews = jdbcTemplate.query(sql, reviewRowMapper(), count);
         } else {
-            sql = "SELECT review_id, content, is_positive, user_id, film_id, useful " +
-                    "FROM reviews WHERE film_id = ? ORDER BY useful DESC LIMIT ?";
+            sql = "SELECT r.review_id, r.content, r.is_positive, r.user_id, r.film_id, " +
+                    "COALESCE(SUM(CASE WHEN rr.is_like = TRUE THEN 1 WHEN rr.is_like = FALSE THEN -1 ELSE 0 END), 0) AS useful "
+                    +
+                    "FROM reviews AS r " +
+                    "LEFT JOIN review_ratings AS rr ON r.review_id = rr.review_id " +
+                    "WHERE r.film_id = ? " +
+                    "GROUP BY r.review_id, r.content, r.is_positive, r.user_id, r.film_id " +
+                    "ORDER BY useful DESC LIMIT ?";
             reviews = jdbcTemplate.query(sql, reviewRowMapper(), filmId, count);
         }
 
@@ -118,36 +138,24 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public void addLike(Integer reviewId, Integer userId) {
-        findById(reviewId); // Проверяем существование отзыва
+        checkReviewExists(reviewId); // Проверяем существование отзыва
 
-        // Удаляем предыдущую оценку пользователя, если она была
-        String deleteSql = "DELETE FROM review_ratings WHERE review_id = ? AND user_id = ?";
-        jdbcTemplate.update(deleteSql, reviewId, userId);
-
-        // Добавляем лайк
-        String insertSql = "INSERT INTO review_ratings (review_id, user_id, is_like) VALUES (?, ?, TRUE)";
-        jdbcTemplate.update(insertSql, reviewId, userId);
-
-        // Обновляем рейтинг
-        updateUsefulRating(reviewId);
+        // MERGE: обновляем существующую оценку или добавляем новую
+        String mergeSql = "MERGE INTO review_ratings (review_id, user_id, is_like) " +
+                "KEY (review_id, user_id) VALUES (?, ?, TRUE)";
+        jdbcTemplate.update(mergeSql, reviewId, userId);
 
         log.debug("Пользователь {} поставил лайк отзыву {}", userId, reviewId);
     }
 
     @Override
     public void addDislike(Integer reviewId, Integer userId) {
-        findById(reviewId); // Проверяем существование отзыва
+        checkReviewExists(reviewId); // Проверяем существование отзыва
 
-        // Удаляем предыдущую оценку пользователя, если она была
-        String deleteSql = "DELETE FROM review_ratings WHERE review_id = ? AND user_id = ?";
-        jdbcTemplate.update(deleteSql, reviewId, userId);
-
-        // Добавляем дизлайк
-        String insertSql = "INSERT INTO review_ratings (review_id, user_id, is_like) VALUES (?, ?, FALSE)";
-        jdbcTemplate.update(insertSql, reviewId, userId);
-
-        // Обновляем рейтинг
-        updateUsefulRating(reviewId);
+        // MERGE: обновляем существующую оценку или добавляем новую
+        String mergeSql = "MERGE INTO review_ratings (review_id, user_id, is_like) " +
+                "KEY (review_id, user_id) VALUES (?, ?, FALSE)";
+        jdbcTemplate.update(mergeSql, reviewId, userId);
 
         log.debug("Пользователь {} поставил дизлайк отзыву {}", userId, reviewId);
     }
@@ -166,27 +174,25 @@ public class ReviewDbStorage implements ReviewStorage {
 
     @Override
     public Integer getUsefulRating(Integer reviewId) {
-        String sql = "SELECT useful FROM reviews WHERE review_id = ?";
+        String sql = "SELECT COALESCE(SUM(CASE WHEN is_like = TRUE THEN 1 WHEN is_like = FALSE THEN -1 ELSE 0 END), 0) "
+                +
+                "FROM review_ratings WHERE review_id = ?";
         return jdbcTemplate.queryForObject(sql, Integer.class, reviewId);
     }
 
     private void removeRating(Integer reviewId, Integer userId, Boolean isLike) {
-        findById(reviewId); // Проверяем существование отзыва
+        checkReviewExists(reviewId); // Проверяем существование отзыва
 
         String sql = "DELETE FROM review_ratings WHERE review_id = ? AND user_id = ? AND is_like = ?";
         jdbcTemplate.update(sql, reviewId, userId, isLike);
-
-        // Обновляем рейтинг
-        updateUsefulRating(reviewId);
     }
 
-    private void updateUsefulRating(Integer reviewId) {
-        String sql = "UPDATE reviews SET useful = (" +
-                "SELECT COALESCE(SUM(CASE WHEN is_like = TRUE THEN 1 ELSE -1 END), 0) " +
-                "FROM review_ratings WHERE review_id = ?" +
-                ") WHERE review_id = ?";
-
-        jdbcTemplate.update(sql, reviewId, reviewId);
+    private void checkReviewExists(Integer reviewId) {
+        String sql = "SELECT COUNT(*) FROM reviews WHERE review_id = ?";
+        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, reviewId);
+        if (count == null || count == 0) {
+            throw new NotFoundException("Отзыв с id " + reviewId + " не найден");
+        }
     }
 
     private RowMapper<Review> reviewRowMapper() {
