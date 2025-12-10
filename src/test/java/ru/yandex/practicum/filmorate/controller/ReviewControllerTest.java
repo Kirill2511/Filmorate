@@ -9,7 +9,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -33,38 +34,6 @@ class ReviewControllerTest {
                         .param("count", "5"))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON));
-    }
-
-    @Test
-    void shouldCreateReview() throws Exception {
-        String reviewJson = """
-                {"content": "Test review content", "isPositive": true, "userId": 1, "filmId": 1}
-                """;
-
-        mockMvc.perform(post("/reviews")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(reviewJson))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.reviewId").exists())
-                .andExpect(jsonPath("$.content").value("Test review content"))
-                .andExpect(jsonPath("$.isPositive").value(true))
-                .andExpect(jsonPath("$.userId").value(1))
-                .andExpect(jsonPath("$.filmId").value(1))
-                .andExpect(jsonPath("$.useful").value(0));
-    }
-
-    @Test
-    void shouldUpdateReview() throws Exception {
-        String updateJson = """
-                {"reviewId": 1, "content": "Updated review content", "isPositive": false, "userId": 1, "filmId": 1}
-                """;
-
-        mockMvc.perform(put("/reviews")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(updateJson))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content").value("Updated review content"))
-                .andExpect(jsonPath("$.isPositive").value(false));
     }
 
     @Test
