@@ -75,7 +75,7 @@ public class FilmRowMapper implements RowMapper<Film> {
         Object[] namesArray = (Object[]) sqlArrayNames.getArray();
         Set<Genre> genres = new LinkedHashSet<>();
 
-        for (int i = 0; i < idsArray.length; i++) {
+        for (int i = 0; i < Math.min(idsArray.length, namesArray.length); i++) {
             if (idsArray[i] != null && namesArray[i] != null) {
                 Integer id = ((Number) idsArray[i]).intValue();
                 String name = namesArray[i].toString();
