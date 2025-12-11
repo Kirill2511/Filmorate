@@ -58,3 +58,13 @@ INSERT INTO film_likes (film_id, user_id) VALUES (2, 1);
 INSERT INTO friendship (user_id, friend_id, status) VALUES (1, 2, 'CONFIRMED');
 INSERT INTO friendship (user_id, friend_id, status) VALUES (2, 1, 'CONFIRMED');
 INSERT INTO friendship (user_id, friend_id, status) VALUES (1, 3, 'UNCONFIRMED');
+
+-- Тестовые отзывы
+INSERT INTO reviews (content, is_positive, user_id, film_id)
+VALUES ('Great movie! Highly recommend.', TRUE, 1, 1);
+
+INSERT INTO reviews (content, is_positive, user_id, film_id)
+VALUES ('Not my cup of tea. Too slow.', FALSE, 2, 1);
+
+INSERT INTO reviews (content, is_positive, user_id, film_id)
+VALUES ('Amazing cinematography!', TRUE, 3, 2);
