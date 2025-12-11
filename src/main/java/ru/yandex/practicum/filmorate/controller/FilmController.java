@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.controller.params.SortBy;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
 
@@ -58,5 +59,11 @@ public class FilmController {
                                       @RequestParam(required = false)
                                       @Positive(message = "genreId should be positive integer") Integer genreId) {
         return filmService.getPopularFilms(count, year, genreId);
+    }
+
+    @GetMapping("/director/{directorId}")
+    public List<Film> getFilmsByDirector(@PathVariable Integer directorId,
+                                         @RequestParam(defaultValue = "likes") SortBy sortBy) {
+        return filmService.getFilmsByDirector(directorId, sortBy);
     }
 }

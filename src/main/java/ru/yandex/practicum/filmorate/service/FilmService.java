@@ -3,7 +3,10 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.controller.params.SortBy;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.storage.director.DirectorStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.util.List;
@@ -14,6 +17,7 @@ import java.util.List;
 public class FilmService {
     private final FilmStorage filmStorage;
     private final UserService userService;
+    private final DirectorStorage directorStorage;
 
     /**
      * Создать фильм
@@ -76,5 +80,12 @@ public class FilmService {
      */
     public List<Film> getPopularFilms(Integer count, Integer year, Integer genreId) {
         return filmStorage.findPopularFilms(count, year, genreId);
+    }
+
+    public List<Film> getFilmsByDirector(Integer id, SortBy sortBy) {
+        if (!directorStorage.isDirectorPresent(id)) {
+            throw new NotFoundException("Режиссер с id " + id + " не найден");
+        }
+        return filmStorage.getFilmsByDirector(id, sortBy);
     }
 }

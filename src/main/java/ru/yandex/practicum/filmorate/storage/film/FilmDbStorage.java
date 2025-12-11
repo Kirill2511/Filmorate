@@ -194,13 +194,13 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public List<Film> getDirectorFilms(Integer id, SortBy sortBy) {
+    public List<Film> getFilmsByDirector(Integer id, SortBy sortBy) {
         String sqlSortBy = "";
         switch (sortBy) {
-            case likes -> sqlSortBy = "ORDER BY likes_count";
+            case likes -> sqlSortBy = "ORDER BY likes_count DESC";
             case year -> sqlSortBy = "ORDER BY f.release_date";
         }
-        String sql = BASE_SELECT_QUERY + "\nWHERE d.director_id = ?\n" + sqlSortBy + "\n" + GROUP_BY;
+        String sql = BASE_SELECT_QUERY + "\nWHERE d.director_id = ?\n" + GROUP_BY + "\n" + sqlSortBy + "\n";
 
         List<Film> films = jdbcTemplate.query(sql, mapper, id);
         log.debug("Получен список фильмов режиссера, количество: {}", films.size());
