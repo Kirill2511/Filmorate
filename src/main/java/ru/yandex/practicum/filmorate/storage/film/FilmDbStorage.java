@@ -204,7 +204,8 @@ public class FilmDbStorage implements FilmStorage {
                 "GROUP BY fl.film_id " +
                 "HAVING COUNT(DISTINCT fl.user_id) = 2" +
                 ") " +
-                GROUP_BY;
+                GROUP_BY +
+                "ORDER BY likes_count DESC";
 
         List<Film> films = (jdbcTemplate.query(sql,new Object[]{userId, friendId}, mapper));
 
