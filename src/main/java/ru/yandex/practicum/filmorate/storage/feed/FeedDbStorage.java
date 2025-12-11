@@ -22,6 +22,18 @@ import java.util.List;
 @Primary
 @RequiredArgsConstructor
 public class FeedDbStorage implements FeedStorage {
+
+    private static final String BASE_SELECT = """
+            SELECT
+                f.event_id,
+                f.user_id,
+                f.entity_id,
+                f.event_type,
+                f.operation,
+                f.created_at
+            FROM feed f
+            """;
+
     private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -47,17 +59,7 @@ public class FeedDbStorage implements FeedStorage {
 
     @Override
     public FeedEvent findByEventId(Integer eventId) {
-        String sql = """
-                SELECT
-                    f.event_id,
-                    f.user_id,
-                    f.entity_id,
-                    f.event_type,
-                    f.operation,
-                    f.created_at
-                FROM feed f
-                WHERE event_id = ?
-                """;
+        String sql = BASE_SELECT + "\nWHERE event_id = ?";
 
         List<FeedEvent> events = jdbcTemplate.query(sql, eventRowMapper(), eventId);
 
@@ -68,35 +70,9 @@ public class FeedDbStorage implements FeedStorage {
         return events.getFirst();
     }
 
-    String a = """
-            SELECT
-                r.review_id,
-                r.content,
-                r.is_positive,
-                r.user_id,
-                r.film_id,
-                COALESCE(SUM(CASE WHEN rr.is_like = TRUE THEN 1 ELSE -1 END), 0) AS useful
-            FROM reviews AS r
-            LEFT JOIN review_ratings AS rr ON r.review_id = rr.review_id
-            WHERE r.review_id = ?
-            GROUP BY ...
-            ORDER BY useful DESC
-            """;
-
     @Override
     public Collection<FeedEvent> findAllByUserId(Integer userId) {
-        String sql = """
-                SELECT
-                    f.event_id,
-                    f.user_id,
-                    f.entity_id,
-                    f.event_type,
-                    f.operation,
-                    f.created_at
-                FROM feed f
-                WHERE user_id = ?
-                ORDER BY f.created_at ASC
-                """;
+        String sql = BASE_SELECT + "\nWHERE user_id = ?\nORDER BY f.created_at ASC";
 
         List<FeedEvent> events = jdbcTemplate.query(sql, eventRowMapper(), userId);
 
