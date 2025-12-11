@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.model.feed.EventType;
+import ru.yandex.practicum.filmorate.model.feed.Operation;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.List;
@@ -15,6 +17,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserService {
     private final UserStorage userStorage;
+    private final FeedService feedService;
 
     /**
      * Создать пользователя
@@ -59,6 +62,8 @@ public class UserService {
 
         userStorage.addFriend(userId, friendId);
         log.info("Пользователи {} и {} стали друзьями", userId, friendId);
+
+        feedService.createEvent(friendId, userId, EventType.FRIEND, Operation.ADD);
     }
 
     /**
@@ -67,6 +72,7 @@ public class UserService {
     public void removeFriend(Integer userId, Integer friendId) {
         userStorage.removeFriend(userId, friendId);
         log.info("Пользователи {} и {} больше не друзья", userId, friendId);
+        feedService.createEvent(friendId, userId, EventType.FRIEND, Operation.REMOVE);
     }
 
     /**

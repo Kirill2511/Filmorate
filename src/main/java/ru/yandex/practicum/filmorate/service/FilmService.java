@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.feed.EventType;
+import ru.yandex.practicum.filmorate.model.feed.Operation;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.util.List;
@@ -14,6 +16,7 @@ import java.util.List;
 public class FilmService {
     private final FilmStorage filmStorage;
     private final UserService userService;
+    private final FeedService feedService;
 
     /**
      * Создать фильм
@@ -57,6 +60,8 @@ public class FilmService {
         Film film = filmStorage.findById(filmId);
         log.info("Пользователь {} поставил лайк фильму {} (всего лайков: {})",
                 userId, filmId, film.getLikes().size());
+
+        feedService.createEvent(filmId, userId, EventType.LIKE, Operation.ADD);
     }
 
     /**
@@ -69,6 +74,8 @@ public class FilmService {
         Film film = filmStorage.findById(filmId);
         log.info("Пользователь {} удалил лайк у фильма {} (осталось лайков: {})",
                 userId, filmId, film.getLikes().size());
+
+        feedService.createEvent(filmId, userId, EventType.LIKE, Operation.REMOVE);
     }
 
     /**
