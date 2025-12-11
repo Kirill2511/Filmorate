@@ -20,4 +20,6 @@ public interface FilmStorage {
     void removeLike(Integer filmId, Integer userId);
 
     List<Film> findPopularFilms(int limit);
+
+    List<Film> getCommonFilms(int userId,int friendId);
 }

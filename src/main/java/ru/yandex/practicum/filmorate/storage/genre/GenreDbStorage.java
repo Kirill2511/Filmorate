@@ -38,7 +38,7 @@ public class GenreDbStorage implements GenreStorage {
         return genres.getFirst();
     }
 
-    private RowMapper<Genre> genreRowMapper() {
+    public RowMapper<Genre> genreRowMapper() {
         return (rs, rowNum) -> {
             Genre genre = new Genre();
             genre.setId(rs.getInt("genre_id"));

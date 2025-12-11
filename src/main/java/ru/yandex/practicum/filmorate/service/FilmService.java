@@ -78,4 +78,10 @@ public class FilmService {
         int limit = (count != null && count > 0) ? count : 10;
         return filmStorage.findPopularFilms(limit);
     }
+
+    public List<Film> getCommonFilms(int userId,int friendId) {
+        log.info("Запрос на общие фильмы");
+        return filmStorage.getCommonFilms(userId,friendId);
+
+    }
 }

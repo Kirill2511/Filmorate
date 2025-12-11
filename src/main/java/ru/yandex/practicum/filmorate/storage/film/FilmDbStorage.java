@@ -25,6 +25,7 @@ public class FilmDbStorage implements FilmStorage {
 
     private final JdbcTemplate jdbcTemplate;
 
+
     @Override
     public Film create(Film film) {
         String sql = "INSERT INTO films (name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
@@ -225,4 +226,46 @@ public class FilmDbStorage implements FilmStorage {
 
         return new HashSet<>(likesList);
     }
+
+    @Override
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        String sql = "SELECT \n" +
+                "    f.*, \n" +
+                "    mr.name AS mpa_name,\n" +
+                "    COUNT(fl.user_id) AS likes_count\n" +
+                "FROM \n" +
+                "    films f\n" +
+                "JOIN \n" +
+                "    mpa_rating mr ON f.mpa_id = mr.mpa_id\n" +
+                "LEFT JOIN \n" +
+                "    film_likes fl ON f.film_id = fl.film_id\n" +
+                "LEFT JOIN film_genre as fg ON f.film_id=fg.film_id\n" +
+                "WHERE \n" +
+                "    f.film_id IN (\n" +
+                "        SELECT f2.film_id\n" +
+                "        FROM films f2\n" +
+                "        JOIN film_likes fl1 ON f2.film_id = fl1.film_id AND fl1.user_id = ?\n" +
+                "        JOIN film_likes fl2 ON f2.film_id = fl2.film_id AND fl2.user_id = ?\n" +
+                "    )\n" +
+                "GROUP BY \n" +
+                "    f.film_id, \n" +
+                "    f.name, \n" +
+                "    f.description, \n" +
+                "    f.release_date, \n" +
+                "    f.duration, \n" +
+                "    f.mpa_id, \n" +
+                "    mr.name\n" +
+                "ORDER BY \n" +
+                "    likes_count DESC;";
+
+        List<Film> films = (jdbcTemplate.query(sql,new Object[]{userId, friendId}, filmRowMapper()));
+
+        for (Film film : films) {
+            film.setGenres(loadGenres(film.getId()));
+            film.setLikes(loadLikes(film.getId()));
+        }
+
+        return films;
+    }
+
 }
