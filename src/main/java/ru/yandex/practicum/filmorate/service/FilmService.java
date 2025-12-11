@@ -93,7 +93,9 @@ public class FilmService {
      * Получить список общих лайкнутых фильмов 2-ух пользователей
      */
     public List<Film> getCommonFilms(int userId,int friendId) {
-        log.info("Запрос на общие фильмы");
+        userService.getUserById(userId);
+        userService.getUserById(friendId);
+        log.info("Запрос на общие фильмы пользователей {} и {}", userId, friendId);
         return filmStorage.getCommonFilms(userId,friendId);
     }
 
