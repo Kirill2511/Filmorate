@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @JdbcTest
 @AutoConfigureTestDatabase
-@Import({FilmDbStorage.class, GenreDbStorage.class, MpaDbStorage.class})
+@Import({FilmDbStorage.class, FilmRowMapper.class, GenreDbStorage.class, MpaDbStorage.class})
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class FilmDbStorageTest {
 
