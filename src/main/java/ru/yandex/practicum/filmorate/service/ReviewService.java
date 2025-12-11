@@ -32,7 +32,7 @@ public class ReviewService {
         log.info("Создан отзыв: id={}, filmId={}, userId={}",
                 createdReview.getReviewId(), createdReview.getFilmId(), createdReview.getUserId());
 
-        feedService.createEvent(createdReview.getReviewId(), createdReview.getUserId(), EventType.REVIEW, Operation.ADD);
+        feedService.createEvent(createdReview.getUserId(), createdReview.getReviewId(), EventType.REVIEW, Operation.ADD);
 
         return createdReview;
     }
@@ -47,7 +47,7 @@ public class ReviewService {
         Review updatedReview = reviewStorage.update(review);
         log.info("Обновлён отзыв: id={}", updatedReview.getReviewId());
 
-        feedService.createEvent(updatedReview.getReviewId(), updatedReview.getUserId(), EventType.REVIEW, Operation.UPDATE);
+        feedService.createEvent(updatedReview.getUserId(), updatedReview.getReviewId(), EventType.REVIEW, Operation.UPDATE);
 
         return updatedReview;
     }
@@ -59,7 +59,7 @@ public class ReviewService {
         Review reviewToDelete = getReviewById(reviewId);
         reviewStorage.delete(reviewId);
         log.info("Удалён отзыв: id={}", reviewId);
-        feedService.createEvent(reviewId, reviewToDelete.getUserId(), EventType.REVIEW, Operation.REMOVE);
+        feedService.createEvent(reviewToDelete.getUserId(), reviewId, EventType.REVIEW, Operation.REMOVE);
     }
 
     /**

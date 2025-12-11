@@ -61,7 +61,7 @@ public class FilmService {
         log.info("Пользователь {} поставил лайк фильму {} (всего лайков: {})",
                 userId, filmId, film.getLikes().size());
 
-        feedService.createEvent(filmId, userId, EventType.LIKE, Operation.ADD);
+        feedService.createEvent(userId, filmId, EventType.LIKE, Operation.ADD);
     }
 
     /**
@@ -75,7 +75,7 @@ public class FilmService {
         log.info("Пользователь {} удалил лайк у фильма {} (осталось лайков: {})",
                 userId, filmId, film.getLikes().size());
 
-        feedService.createEvent(filmId, userId, EventType.LIKE, Operation.REMOVE);
+        feedService.createEvent(userId, filmId, EventType.LIKE, Operation.REMOVE);
     }
 
     /**

@@ -24,10 +24,10 @@ public class FeedService {
         return feedStorage.findAllByUserId(userId);
     }
 
-    public FeedEvent createEvent(Integer entityId, Integer userId, EventType eventType, Operation operation) {
+    public FeedEvent createEvent(Integer userId, Integer entityId, EventType eventType, Operation operation) {
         FeedEvent event = new FeedEvent();
-        event.setEntityId(entityId);
         event.setUserId(userId);
+        event.setEntityId(entityId);
         event.setEventType(eventType);
         event.setOperation(operation);
 

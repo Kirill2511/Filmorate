@@ -63,7 +63,7 @@ public class UserService {
         userStorage.addFriend(userId, friendId);
         log.info("Пользователи {} и {} стали друзьями", userId, friendId);
 
-        feedService.createEvent(friendId, userId, EventType.FRIEND, Operation.ADD);
+        feedService.createEvent(userId, friendId, EventType.FRIEND, Operation.ADD);
     }
 
     /**
@@ -72,7 +72,7 @@ public class UserService {
     public void removeFriend(Integer userId, Integer friendId) {
         userStorage.removeFriend(userId, friendId);
         log.info("Пользователи {} и {} больше не друзья", userId, friendId);
-        feedService.createEvent(friendId, userId, EventType.FRIEND, Operation.REMOVE);
+        feedService.createEvent(userId, friendId, EventType.FRIEND, Operation.REMOVE);
     }
 
     /**
