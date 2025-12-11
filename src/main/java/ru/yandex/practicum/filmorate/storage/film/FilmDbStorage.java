@@ -194,6 +194,23 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
+    @Override
+    public List<Film> getCommonFilms(int userId, int friendId) {
+        String sql = BASE_SELECT_QUERY +
+                "WHERE f.film_id IN (" +
+                "SELECT fl.film_id " +
+                "FROM film_likes fl " +
+                "WHERE fl.user_id IN (?, ?) " +
+                "GROUP BY fl.film_id " +
+                "HAVING COUNT(DISTINCT fl.user_id) = 2" +
+                ") " +
+                GROUP_BY;
+
+        List<Film> films = (jdbcTemplate.query(sql,new Object[]{userId, friendId}, mapper));
+
+        return films;
+    }
+
     /**
      * Возвращает список фильмов указанного режиссера с сортировкой.
      * <p>
