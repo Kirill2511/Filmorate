@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.controller.params.SortBy;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
@@ -222,6 +223,32 @@ public class FilmDbStorage implements FilmStorage {
                 LIMIT ?
                 """);
 
+        return baseQuery.toString();
+    }
+
+    private String buildQueryForDirectorAndSortBy(SortBy sortBy) {
+        StringBuilder baseQuery = new StringBuilder("""
+                SELECT
+                    f.film_id,
+                    f.name,
+                    f.description,
+                    f.release_date,
+                    f.duration,
+                    m.name AS mpa_name,
+                    d.name AS director_name,
+                    COUNT (fl.film_id) AS likes_count
+                FROM films AS f
+                JOIN mpa_rating AS m ON f.mpa_id = m.mpa_id
+                LEFT JOIN film_likes AS fl ON f.film_id = fl.film_id
+                JOIN film_directors AS fd ON f.film_id = fd.film_id
+                JOIN directors AS d on fd.director_id = d.director_id
+                WHERE d.director_id = ?
+                GROUP BY f.film_id
+                """);
+        switch (sortBy) {
+            case year -> baseQuery.append("ORDER BY f.release_date");
+            case likes -> baseQuery.append("ORDER BY likes_count");
+        }
         return baseQuery.toString();
     }
 
