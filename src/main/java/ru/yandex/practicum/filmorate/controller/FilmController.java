@@ -60,15 +60,16 @@ public class FilmController {
                                       @Positive(message = "genreId should be positive integer") Integer genreId) {
         return filmService.getPopularFilms(count, year, genreId);
     }
+
     /**
      * Возвращает список фильмов конкретного режиссера с возможностью сортировки.
      * GET /films/director/{directorId}?sortBy=likes|year
      * Параметры:
-     * @param directorId — идентификатор режиссера, фильмы которого нужно получить.
-     * @param sortBy — критерий сортировки (по умолчанию "likes"):
-     *                 likes — сортировать по количеству лайков (по убыванию)
-     *                 year  — сортировать по году выпуска (по возрастанию)
      *
+     * @param directorId — идентификатор режиссера, фильмы которого нужно получить.
+     * @param sortBy     — критерий сортировки (по умолчанию "likes"):
+     *                   likes — сортировать по количеству лайков (по убыванию)
+     *                   year  — сортировать по году выпуска (по возрастанию)
      * @return список фильмов режиссера, отсортированный по заданному критерию.
      */
     @GetMapping("/director/{directorId}")

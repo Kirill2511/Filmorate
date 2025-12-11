@@ -225,18 +225,18 @@ public class FilmDbStorage implements FilmStorage {
 
     /**
      * Добавляет связь "фильм — режиссер" для переданного списка режиссеров.
-     *
+     * <p>
      * Метод выполняет пакетную вставку (batch update), что значительно быстрее,
      * чем отправлять INSERT по одному.
-     *
+     * <p>
      * Поведение:
      * 1. Вызывает batchUpdate, передавая список режиссеров:
-     *      — для каждого элемента списка будет выполнена одна "порция" INSERT'а;
-     *      — PreparedStatementSetter устанавливает параметры film_id и director_id.
+     * — для каждого элемента списка будет выполнена одна "порция" INSERT'а;
+     * — PreparedStatementSetter устанавливает параметры film_id и director_id.
      * 2. В результате в таблицу film_directors добавляется по одной записи
-     *    на каждого режиссера из списка.
+     * на каждого режиссера из списка.
      *
-     * @param filmId идентификатор фильма
+     * @param filmId    идентификатор фильма
      * @param directors список режиссеров, которых необходимо привязать к фильму
      */
     private void addFilmDirectors(int filmId, List<Director> directors) {
