@@ -53,7 +53,7 @@ public class FeedDbStorage implements FeedStorage {
 
         event.setId(keyHolder.getKey().intValue());
 
-        log.debug("Создан фильм с id: {}", event.getId());
+        log.debug("Создано событие с id: {}", event.getId());
         return findByEventId(event.getId());
     }
 
@@ -75,10 +75,6 @@ public class FeedDbStorage implements FeedStorage {
         String sql = BASE_SELECT + "\nWHERE user_id = ?\nORDER BY f.created_at ASC";
 
         List<FeedEvent> events = jdbcTemplate.query(sql, eventRowMapper(), userId);
-
-        if (events.isEmpty()) {
-            throw new NotFoundException("События пользователя с id " + userId + " не найдены");
-        }
 
         log.debug("Получен список всех событий пользователя {}, количество: {}", userId, events.size());
 

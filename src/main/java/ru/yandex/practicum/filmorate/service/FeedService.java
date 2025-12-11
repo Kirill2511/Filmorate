@@ -7,6 +7,7 @@ import ru.yandex.practicum.filmorate.model.feed.EventType;
 import ru.yandex.practicum.filmorate.model.feed.FeedEvent;
 import ru.yandex.practicum.filmorate.model.feed.Operation;
 import ru.yandex.practicum.filmorate.storage.feed.FeedStorage;
+import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
 import java.util.Collection;
 
@@ -16,8 +17,10 @@ import java.util.Collection;
 public class FeedService {
 
     private final FeedStorage feedStorage;
+    private final UserStorage userStorage;
 
     public Collection<FeedEvent> getFeed(Integer userId) {
+        userStorage.findById(userId);
         return feedStorage.findAllByUserId(userId);
     }
 
