@@ -2,6 +2,7 @@ package ru.yandex.practicum.filmorate.storage.film;
 
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
@@ -11,9 +12,7 @@ import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
 
 @Component
 public class FilmRowMapper implements RowMapper<Film> {
@@ -33,6 +32,7 @@ public class FilmRowMapper implements RowMapper<Film> {
         mapLikes(film, rs);
         mapMpa(film, rs);
         mapGenres(film, rs);
+        mapDirectors(film, rs);
 
         return film;
     }
@@ -83,5 +83,27 @@ public class FilmRowMapper implements RowMapper<Film> {
             }
         }
         film.setGenres(genres);
+    }
+
+    private void mapDirectors(Film film, ResultSet resultSet) throws SQLException {
+        Array sqlArrayIds = resultSet.getArray("director_ids");
+        if (resultSet.wasNull()) {
+            return;
+        }
+
+        Array sqlArrayNames = resultSet.getArray("director_names");
+
+        Object[] idsArray = (Object[]) sqlArrayIds.getArray();
+        Object[] namesArray = (Object[]) sqlArrayNames.getArray();
+        List<Director> directors = new LinkedList<>();
+
+        for (int i = 0; i < Math.min(idsArray.length, namesArray.length); i++) {
+            if (idsArray[i] != null && namesArray[i] != null) {
+                Integer id = ((Number) idsArray[i]).intValue();
+                String name = namesArray[i].toString();
+                directors.add(new Director(id, name));
+            }
+        }
+        film.setDirectors(directors);
     }
 }

@@ -9,6 +9,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.controller.params.SortBy;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
@@ -36,12 +37,16 @@ public class FilmDbStorage implements FilmStorage {
                 ARRAY_AGG(DISTINCT l.user_id) AS likes,
                 ARRAY_AGG(DISTINCT g.genre_id ORDER BY g.genre_id) AS genre_ids,
                 ARRAY_AGG(DISTINCT g.name ORDER BY g.genre_id) AS genre_names,
+                ARRAY_AGG(DISTINCT d.director_id ORDER BY d.director_id) AS director_ids,
+                ARRAY_AGG(DISTINCT d.name ORDER BY d.director_id) AS director_names,
                 COUNT(DISTINCT l.user_id) AS likes_count
             FROM films f
             LEFT JOIN mpa_rating m ON f.mpa_id = m.mpa_id
             LEFT JOIN film_likes AS l ON f.film_id = l.film_id
             LEFT JOIN film_genre AS fg ON f.film_id = fg.film_id
             LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
+            LEFT JOIN film_directors AS fd ON f.film_id = fd.film_id
+            LEFT JOIN directors AS d ON d.director_id = fd.director_id
             """;
 
     private static final String GROUP_BY = """
@@ -106,6 +111,13 @@ public class FilmDbStorage implements FilmStorage {
 
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
             saveGenres(film.getId(), film.getGenres());
+        }
+
+        String deleteDirectorsSql = "DELETE from film_directors WHERE film_id = ?";
+        jdbcTemplate.update(deleteDirectorsSql, film.getId());
+
+        if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
+            addFilmDirectors(film.getId(), film.getDirectors());
         }
 
         log.debug("Обновлён фильм с id: {}", film.getId());
@@ -181,13 +193,27 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
-    private void addFilmDirectors(int filmId, Set<Integer> directorsId) {
+    @Override
+    public List<Film> getDirectorFilms(Integer id, SortBy sortBy) {
+        String sqlSortBy = "";
+        switch (sortBy) {
+            case likes -> sqlSortBy = "ORDER BY likes_count";
+            case year -> sqlSortBy = "ORDER BY f.release_date";
+        }
+        String sql = BASE_SELECT_QUERY + "\nWHERE d.director_id = ?\n" + sqlSortBy + "\n" + GROUP_BY;
+
+        List<Film> films = jdbcTemplate.query(sql, mapper, id);
+        log.debug("Получен список фильмов режиссера, количество: {}", films.size());
+        return films;
+    }
+
+    private void addFilmDirectors(int filmId, List<Director> directors) {
         String sql = "INSERT INTO film_directors (film_id, director_id) VALUES (?, ?)";
 
-        jdbcTemplate.batchUpdate(sql, directorsId, directorsId.size(),
-                (ps, directorId) -> {
+        jdbcTemplate.batchUpdate(sql, directors, directors.size(),
+                (ps, director) -> {
                     ps.setInt(1, filmId);
-                    ps.setInt(2, directorId);
+                    ps.setInt(2, director.getId());
                 });
     }
 
@@ -213,32 +239,6 @@ public class FilmDbStorage implements FilmStorage {
         }
         baseQuery.append(GROUP_BY).append("\nORDER BY likes_count DESC LIMIT ?");
 
-        return baseQuery.toString();
-    }
-
-    private String buildQueryForDirectorAndSortBy(SortBy sortBy) {
-        StringBuilder baseQuery = new StringBuilder("""
-                SELECT
-                    f.film_id,
-                    f.name,
-                    f.description,
-                    f.release_date,
-                    f.duration,
-                    m.name AS mpa_name,
-                    d.name AS director_name,
-                    COUNT (fl.film_id) AS likes_count
-                FROM films AS f
-                JOIN mpa_rating AS m ON f.mpa_id = m.mpa_id
-                LEFT JOIN film_likes AS fl ON f.film_id = fl.film_id
-                JOIN film_directors AS fd ON f.film_id = fd.film_id
-                JOIN directors AS d on fd.director_id = d.director_id
-                WHERE d.director_id = ?
-                GROUP BY f.film_id
-                """);
-        switch (sortBy) {
-            case year -> baseQuery.append("ORDER BY f.release_date");
-            case likes -> baseQuery.append("ORDER BY likes_count");
-        }
         return baseQuery.toString();
     }
 
