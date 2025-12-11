@@ -113,6 +113,7 @@ public class FilmDbStorage implements FilmStorage {
             saveGenres(film.getId(), film.getGenres());
         }
 
+        // Обновляем режиссеров
         String deleteDirectorsSql = "DELETE from film_directors WHERE film_id = ?";
         jdbcTemplate.update(deleteDirectorsSql, film.getId());
 
@@ -193,6 +194,21 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
+    /**
+     * Возвращает список фильмов указанного режиссера с сортировкой.
+     * <p>
+     * Поведение:
+     * 1. В зависимости от параметра sortBy формирует фрагмент ORDER BY:
+     * likes — сортировка по количеству лайков по убыванию;
+     * year  — сортировка по дате выхода фильма по возрастанию.
+     * 2. Собирает итоговый SQL-запрос на основе базового SELECT, условия по director_id
+     * и группировки (GROUP BY), а затем добавляет секцию сортировки.
+     * 3. Выполняет запрос через JdbcTemplate и маппер, возвращая список фильмов.
+     *
+     * @param id     идентификатор режиссера
+     * @param sortBy тип сортировки (likes или year)
+     * @return список фильмов, отсортированных по заданному правилу
+     */
     @Override
     public List<Film> getFilmsByDirector(Integer id, SortBy sortBy) {
         String sqlSortBy = "";
@@ -207,6 +223,22 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
+    /**
+     * Добавляет связь "фильм — режиссер" для переданного списка режиссеров.
+     *
+     * Метод выполняет пакетную вставку (batch update), что значительно быстрее,
+     * чем отправлять INSERT по одному.
+     *
+     * Поведение:
+     * 1. Вызывает batchUpdate, передавая список режиссеров:
+     *      — для каждого элемента списка будет выполнена одна "порция" INSERT'а;
+     *      — PreparedStatementSetter устанавливает параметры film_id и director_id.
+     * 2. В результате в таблицу film_directors добавляется по одной записи
+     *    на каждого режиссера из списка.
+     *
+     * @param filmId идентификатор фильма
+     * @param directors список режиссеров, которых необходимо привязать к фильму
+     */
     private void addFilmDirectors(int filmId, List<Director> directors) {
         String sql = "INSERT INTO film_directors (film_id, director_id) VALUES (?, ?)";
 
