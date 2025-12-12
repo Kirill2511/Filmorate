@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Review;
+import ru.yandex.practicum.filmorate.model.feed.EventType;
+import ru.yandex.practicum.filmorate.model.feed.Operation;
 import ru.yandex.practicum.filmorate.storage.review.ReviewStorage;
 
 import java.util.List;
@@ -16,6 +18,7 @@ public class ReviewService {
     private final ReviewStorage reviewStorage;
     private final UserService userService;
     private final FilmService filmService;
+    private final FeedService feedService;
 
     /**
      * Создать отзыв
@@ -28,6 +31,9 @@ public class ReviewService {
         Review createdReview = reviewStorage.create(review);
         log.info("Создан отзыв: id={}, filmId={}, userId={}",
                 createdReview.getReviewId(), createdReview.getFilmId(), createdReview.getUserId());
+
+        feedService.createEvent(createdReview.getUserId(), createdReview.getReviewId(), EventType.REVIEW, Operation.ADD);
+
         return createdReview;
     }
 
@@ -40,6 +46,9 @@ public class ReviewService {
         }
         Review updatedReview = reviewStorage.update(review);
         log.info("Обновлён отзыв: id={}", updatedReview.getReviewId());
+
+        feedService.createEvent(updatedReview.getUserId(), updatedReview.getReviewId(), EventType.REVIEW, Operation.UPDATE);
+
         return updatedReview;
     }
 
@@ -47,8 +56,10 @@ public class ReviewService {
      * Удалить отзыв
      */
     public void deleteReview(Integer reviewId) {
+        Review reviewToDelete = getReviewById(reviewId);
         reviewStorage.delete(reviewId);
         log.info("Удалён отзыв: id={}", reviewId);
+        feedService.createEvent(reviewToDelete.getUserId(), reviewId, EventType.REVIEW, Operation.REMOVE);
     }
 
     /**
