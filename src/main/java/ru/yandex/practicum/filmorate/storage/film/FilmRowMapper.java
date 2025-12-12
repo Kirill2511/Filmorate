@@ -92,6 +92,9 @@ public class FilmRowMapper implements RowMapper<Film> {
         }
 
         Array sqlArrayNames = resultSet.getArray("director_names");
+        if (resultSet.wasNull()) {
+            return;
+        }
 
         Object[] idsArray = (Object[]) sqlArrayIds.getArray();
         Object[] namesArray = (Object[]) sqlArrayNames.getArray();

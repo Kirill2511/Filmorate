@@ -82,10 +82,10 @@ public class FilmService {
         return filmStorage.findPopularFilms(count, year, genreId);
     }
 
-    public List<Film> getFilmsByDirector(Integer id, SortBy sortBy) {
-        if (!directorStorage.isDirectorPresent(id)) {
-            throw new NotFoundException("Режиссер с id " + id + " не найден");
+    public List<Film> getFilmsByDirector(Integer directorid, SortBy sortBy) {
+        if (!directorStorage.isDirectorPresent(directorid)) {
+            throw new NotFoundException("Режиссер с id " + directorid + " не найден");
         }
-        return filmStorage.getFilmsByDirector(id, sortBy);
+        return filmStorage.getFilmsByDirector(directorid, sortBy);
     }
 }

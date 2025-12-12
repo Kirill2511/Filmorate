@@ -205,20 +205,21 @@ public class FilmDbStorage implements FilmStorage {
      * и группировки (GROUP BY), а затем добавляет секцию сортировки.
      * 3. Выполняет запрос через JdbcTemplate и маппер, возвращая список фильмов.
      *
-     * @param id     идентификатор режиссера
+     * @param directorId     идентификатор режиссера
      * @param sortBy тип сортировки (likes или year)
      * @return список фильмов, отсортированных по заданному правилу
      */
     @Override
-    public List<Film> getFilmsByDirector(Integer id, SortBy sortBy) {
+    public List<Film> getFilmsByDirector(Integer directorId, SortBy sortBy) {
         String sqlSortBy = "";
         switch (sortBy) {
             case likes -> sqlSortBy = "ORDER BY likes_count DESC";
             case year -> sqlSortBy = "ORDER BY f.release_date";
+            default -> throw new IllegalArgumentException("Такая сортировка не поддерживается: " + sortBy);
         }
         String sql = BASE_SELECT_QUERY + "\nWHERE d.director_id = ?\n" + GROUP_BY + "\n" + sqlSortBy + "\n";
 
-        List<Film> films = jdbcTemplate.query(sql, mapper, id);
+        List<Film> films = jdbcTemplate.query(sql, mapper, directorId);
         log.debug("Получен список фильмов режиссера, количество: {}", films.size());
         return films;
     }
