@@ -62,7 +62,10 @@ public class FilmController {
     }
 
     @GetMapping("/common")
-    public List<Film> getCommonFilms(@RequestParam int userId, @RequestParam int friendId) {
+    public List<Film> getCommonFilms(@RequestParam
+                                     @Positive(message = "userId should be positive integer") Integer userId,
+                                     @RequestParam
+                                     @Positive(message = "friendId should be positive integer") Integer friendId) {
         return filmService.getCommonFilms(userId,friendId);
     }
 

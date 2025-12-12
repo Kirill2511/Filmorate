@@ -195,7 +195,7 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     @Override
-    public List<Film> getCommonFilms(int userId, int friendId) {
+    public List<Film> getCommonFilms(Integer userId, Integer friendId) {
         String sql = BASE_SELECT_QUERY +
                 "WHERE f.film_id IN (" +
                 "SELECT fl.film_id " +
@@ -207,7 +207,9 @@ public class FilmDbStorage implements FilmStorage {
                 GROUP_BY +
                 "ORDER BY likes_count DESC";
 
-        List<Film> films = (jdbcTemplate.query(sql,new Object[]{userId, friendId}, mapper));
+        List<Film> films = jdbcTemplate.query(sql, new Object[]{userId, friendId}, mapper);
+        log.debug("Получен список общих фильмов пользователей {} и {}, количество: {}",userId,
+                friendId, films.size());
 
         return films;
     }

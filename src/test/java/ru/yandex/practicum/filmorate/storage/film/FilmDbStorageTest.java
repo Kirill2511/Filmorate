@@ -10,6 +10,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.Mpa;
+import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.genre.GenreDbStorage;
 import ru.yandex.practicum.filmorate.storage.mpa.MpaDbStorage;
 
@@ -316,5 +317,22 @@ public class FilmDbStorageTest {
         assertThat(createdFilm.getGenres())
                 .extracting(Genre::getId)
                 .containsExactly(1, 2, 6);
+    }
+
+    @Test
+    void testCommonFilms() {
+        Film newFilm = new Film();
+        newFilm.setName("New Test Film");
+        newFilm.setDescription("Description for new film");
+        newFilm.setReleaseDate(LocalDate.of(2023, 6, 1));
+        newFilm.setDuration(100);
+        newFilm.setMpa(new Mpa(3, "PG-13"));
+
+        Film createdFilm = filmStorage.create(newFilm);
+
+        filmStorage.addLike(createdFilm.getId(),1);
+        filmStorage.addLike(createdFilm.getId(),2);
+
+        assertThat(filmStorage.getCommonFilms(1,2).contains(createdFilm));
     }
 }
