@@ -66,7 +66,7 @@ public class FilmController {
                                      @Positive(message = "userId should be positive integer") Integer userId,
                                      @RequestParam
                                      @Positive(message = "friendId should be positive integer") Integer friendId) {
-        return filmService.getCommonFilms(userId,friendId);
+        return filmService.getCommonFilms(userId, friendId);
     }
 
     /**

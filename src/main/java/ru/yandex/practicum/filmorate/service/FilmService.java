@@ -96,7 +96,7 @@ public class FilmService {
         userService.getUserById(userId);
         userService.getUserById(friendId);
         log.info("Запрос на общие фильмы пользователей {} и {}", userId, friendId);
-        return filmStorage.getCommonFilms(userId,friendId);
+        return filmStorage.getCommonFilms(userId, friendId);
     }
 
     public List<Film> getFilmsByDirector(Integer directorid, SortBy sortBy) {
