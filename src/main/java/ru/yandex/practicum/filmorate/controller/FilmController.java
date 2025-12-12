@@ -61,6 +61,14 @@ public class FilmController {
         return filmService.getPopularFilms(count, year, genreId);
     }
 
+    @GetMapping("/common")
+    public List<Film> getCommonFilms(@RequestParam
+                                     @Positive(message = "userId should be positive integer") Integer userId,
+                                     @RequestParam
+                                     @Positive(message = "friendId should be positive integer") Integer friendId) {
+        return filmService.getCommonFilms(userId, friendId);
+    }
+
     /**
      * Возвращает список фильмов конкретного режиссера с возможностью сортировки.
      * GET /films/director/{directorId}?sortBy=likes|year

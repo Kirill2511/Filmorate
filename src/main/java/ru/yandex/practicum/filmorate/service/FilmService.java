@@ -89,6 +89,16 @@ public class FilmService {
         return filmStorage.findPopularFilms(count, year, genreId);
     }
 
+    /**
+     * Получить список общих лайкнутых фильмов 2-ух пользователей
+     */
+    public List<Film> getCommonFilms(Integer userId, Integer friendId) {
+        userService.getUserById(userId);
+        userService.getUserById(friendId);
+        log.info("Запрос на общие фильмы пользователей {} и {}", userId, friendId);
+        return filmStorage.getCommonFilms(userId, friendId);
+    }
+
     public List<Film> getFilmsByDirector(Integer directorid, SortBy sortBy) {
         if (!directorStorage.isDirectorPresent(directorid)) {
             throw new NotFoundException("Режиссер с id " + directorid + " не найден");

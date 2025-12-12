@@ -205,8 +205,8 @@ public class FilmDbStorage implements FilmStorage {
      * и группировки (GROUP BY), а затем добавляет секцию сортировки.
      * 3. Выполняет запрос через JdbcTemplate и маппер, возвращая список фильмов.
      *
-     * @param directorId     идентификатор режиссера
-     * @param sortBy тип сортировки (likes или year)
+     * @param directorId идентификатор режиссера
+     * @param sortBy     тип сортировки (likes или year)
      * @return список фильмов, отсортированных по заданному правилу
      */
     @Override
@@ -224,30 +224,24 @@ public class FilmDbStorage implements FilmStorage {
         return films;
     }
 
-    /**
-     * Добавляет связь "фильм — режиссер" для переданного списка режиссеров.
-     * <p>
-     * Метод выполняет пакетную вставку (batch update), что значительно быстрее,
-     * чем отправлять INSERT по одному.
-     * <p>
-     * Поведение:
-     * 1. Вызывает batchUpdate, передавая список режиссеров:
-     * — для каждого элемента списка будет выполнена одна "порция" INSERT'а;
-     * — PreparedStatementSetter устанавливает параметры film_id и director_id.
-     * 2. В результате в таблицу film_directors добавляется по одной записи
-     * на каждого режиссера из списка.
-     *
-     * @param filmId    идентификатор фильма
-     * @param directors список режиссеров, которых необходимо привязать к фильму
-     */
-    private void addFilmDirectors(int filmId, List<Director> directors) {
-        String sql = "INSERT INTO film_directors (film_id, director_id) VALUES (?, ?)";
+    @Override
+    public List<Film> getCommonFilms(Integer userId, Integer friendId) {
+        String sql = BASE_SELECT_QUERY +
+                "WHERE f.film_id IN (" +
+                "SELECT fl.film_id " +
+                "FROM film_likes fl " +
+                "WHERE fl.user_id IN (?, ?) " +
+                "GROUP BY fl.film_id " +
+                "HAVING COUNT(DISTINCT fl.user_id) = 2" +
+                ") " +
+                GROUP_BY +
+                "ORDER BY likes_count DESC";
 
-        jdbcTemplate.batchUpdate(sql, directors, directors.size(),
-                (ps, director) -> {
-                    ps.setInt(1, filmId);
-                    ps.setInt(2, director.getId());
-                });
+        List<Film> films = jdbcTemplate.query(sql, new Object[]{userId, friendId}, mapper);
+        log.debug("Получен список общих фильмов пользователей {} и {}, количество: {}", userId,
+                friendId, films.size());
+
+        return films;
     }
 
     /**
@@ -297,5 +291,31 @@ public class FilmDbStorage implements FilmStorage {
         }
 
         jdbcTemplate.batchUpdate(sql, batchArgs);
+    }
+
+    /**
+     * Добавляет связь "фильм — режиссер" для переданного списка режиссеров.
+     * <p>
+     * Метод выполняет пакетную вставку (batch update), что значительно быстрее,
+     * чем отправлять INSERT по одному.
+     * <p>
+     * Поведение:
+     * 1. Вызывает batchUpdate, передавая список режиссеров:
+     * — для каждого элемента списка будет выполнена одна "порция" INSERT'а;
+     * — PreparedStatementSetter устанавливает параметры film_id и director_id.
+     * 2. В результате в таблицу film_directors добавляется по одной записи
+     * на каждого режиссера из списка.
+     *
+     * @param filmId    идентификатор фильма
+     * @param directors список режиссеров, которых необходимо привязать к фильму
+     */
+    private void addFilmDirectors(int filmId, List<Director> directors) {
+        String sql = "INSERT INTO film_directors (film_id, director_id) VALUES (?, ?)";
+
+        jdbcTemplate.batchUpdate(sql, directors, directors.size(),
+                (ps, director) -> {
+                    ps.setInt(1, filmId);
+                    ps.setInt(2, director.getId());
+                });
     }
 }
