@@ -7,7 +7,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.controller.params.SortBy;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 
@@ -35,12 +37,16 @@ public class FilmDbStorage implements FilmStorage {
                 ARRAY_AGG(DISTINCT l.user_id) AS likes,
                 ARRAY_AGG(DISTINCT g.genre_id ORDER BY g.genre_id) AS genre_ids,
                 ARRAY_AGG(DISTINCT g.name ORDER BY g.genre_id) AS genre_names,
+                ARRAY_AGG(DISTINCT d.director_id ORDER BY d.director_id) AS director_ids,
+                ARRAY_AGG(DISTINCT d.name ORDER BY d.director_id) AS director_names,
                 COUNT(DISTINCT l.user_id) AS likes_count
             FROM films f
             LEFT JOIN mpa_rating m ON f.mpa_id = m.mpa_id
             LEFT JOIN film_likes AS l ON f.film_id = l.film_id
             LEFT JOIN film_genre AS fg ON f.film_id = fg.film_id
             LEFT JOIN genres AS g ON fg.genre_id = g.genre_id
+            LEFT JOIN film_directors AS fd ON f.film_id = fd.film_id
+            LEFT JOIN directors AS d ON d.director_id = fd.director_id
             """;
 
     private static final String GROUP_BY = """
@@ -78,6 +84,10 @@ public class FilmDbStorage implements FilmStorage {
             saveGenres(film.getId(), film.getGenres());
         }
 
+        if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
+            addFilmDirectors(film.getId(), film.getDirectors());
+        }
+
         log.debug("Создан фильм с id: {}", film.getId());
         return findById(film.getId());
     }
@@ -101,6 +111,14 @@ public class FilmDbStorage implements FilmStorage {
 
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
             saveGenres(film.getId(), film.getGenres());
+        }
+
+        // Обновляем режиссеров
+        String deleteDirectorsSql = "DELETE from film_directors WHERE film_id = ?";
+        jdbcTemplate.update(deleteDirectorsSql, film.getId());
+
+        if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
+            addFilmDirectors(film.getId(), film.getDirectors());
         }
 
         log.debug("Обновлён фильм с id: {}", film.getId());
@@ -174,6 +192,62 @@ public class FilmDbStorage implements FilmStorage {
 
         log.debug("Получен список популярных фильмов, количество: {}", films.size());
         return films;
+    }
+
+    /**
+     * Возвращает список фильмов указанного режиссера с сортировкой.
+     * <p>
+     * Поведение:
+     * 1. В зависимости от параметра sortBy формирует фрагмент ORDER BY:
+     * likes — сортировка по количеству лайков по убыванию;
+     * year  — сортировка по дате выхода фильма по возрастанию.
+     * 2. Собирает итоговый SQL-запрос на основе базового SELECT, условия по director_id
+     * и группировки (GROUP BY), а затем добавляет секцию сортировки.
+     * 3. Выполняет запрос через JdbcTemplate и маппер, возвращая список фильмов.
+     *
+     * @param directorId     идентификатор режиссера
+     * @param sortBy тип сортировки (likes или year)
+     * @return список фильмов, отсортированных по заданному правилу
+     */
+    @Override
+    public List<Film> getFilmsByDirector(Integer directorId, SortBy sortBy) {
+        String sqlSortBy = "";
+        switch (sortBy) {
+            case likes -> sqlSortBy = "ORDER BY likes_count DESC";
+            case year -> sqlSortBy = "ORDER BY f.release_date";
+            default -> throw new IllegalArgumentException("Такая сортировка не поддерживается: " + sortBy);
+        }
+        String sql = BASE_SELECT_QUERY + "\nWHERE d.director_id = ?\n" + GROUP_BY + "\n" + sqlSortBy + "\n";
+
+        List<Film> films = jdbcTemplate.query(sql, mapper, directorId);
+        log.debug("Получен список фильмов режиссера, количество: {}", films.size());
+        return films;
+    }
+
+    /**
+     * Добавляет связь "фильм — режиссер" для переданного списка режиссеров.
+     * <p>
+     * Метод выполняет пакетную вставку (batch update), что значительно быстрее,
+     * чем отправлять INSERT по одному.
+     * <p>
+     * Поведение:
+     * 1. Вызывает batchUpdate, передавая список режиссеров:
+     * — для каждого элемента списка будет выполнена одна "порция" INSERT'а;
+     * — PreparedStatementSetter устанавливает параметры film_id и director_id.
+     * 2. В результате в таблицу film_directors добавляется по одной записи
+     * на каждого режиссера из списка.
+     *
+     * @param filmId    идентификатор фильма
+     * @param directors список режиссеров, которых необходимо привязать к фильму
+     */
+    private void addFilmDirectors(int filmId, List<Director> directors) {
+        String sql = "INSERT INTO film_directors (film_id, director_id) VALUES (?, ?)";
+
+        jdbcTemplate.batchUpdate(sql, directors, directors.size(),
+                (ps, director) -> {
+                    ps.setInt(1, filmId);
+                    ps.setInt(2, director.getId());
+                });
     }
 
     /**
