@@ -101,4 +101,9 @@ public class FilmController {
                                  @RequestParam Set<SearchBy> by) {
         return filmService.searchFilm(query, by);
     }
+
+    @DeleteMapping("/{filmId}")
+    public void deleteFilm(@PathVariable Integer filmId) {
+        filmService.deleteFilm(filmId);
+    }
 }
