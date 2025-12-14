@@ -171,7 +171,7 @@ public class FilmDbStorage implements FilmStorage {
     public void addLike(Integer filmId, Integer userId) {
         findById(filmId);
 
-        String sql = "INSERT INTO film_likes (film_id, user_id) VALUES (?, ?)";
+        String sql = "MERGE INTO film_likes (film_id, user_id) VALUES (?, ?)";
         jdbcTemplate.update(sql, filmId, userId);
 
         log.debug("Пользователь {} поставил лайк фильму {}", userId, filmId);
@@ -286,7 +286,7 @@ public class FilmDbStorage implements FilmStorage {
             conditions.add("EXTRACT(YEAR FROM f.release_date) = ?");
         }
         if (genreId != null) {
-            conditions.add("fg.genre_id = ?");
+            conditions.add("EXISTS (SELECT 1 FROM film_genre fg_filter WHERE fg_filter.film_id = f.film_id AND fg_filter.genre_id = ?)");
         }
 
         if (!conditions.isEmpty()) {
