@@ -14,10 +14,9 @@ import ru.yandex.practicum.filmorate.validation.OnUpdate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Director {
-    @Null(groups = OnCreate.class, message = "id не передается при создании")
     @NotNull(groups = OnUpdate.class, message = "id должен быть передан при обновлении")
     @Positive(groups = OnUpdate.class, message = "id должен быть положительным")
     private Integer id;
-    @NotBlank(message = "Имя режиссера должно быть заполнено")
+    @NotBlank(groups = {OnCreate.class, OnUpdate.class}, message = "Имя режиссера должно быть заполнено")
     private String name;
 }
