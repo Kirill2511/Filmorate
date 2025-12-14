@@ -24,7 +24,11 @@ public class StringToSearchBySetConverter implements Converter<String, Set<Searc
                     .map(SearchBy::valueOf)
                     .collect(Collectors.toSet());
         } catch (IllegalArgumentException e) {
-            throw new BadRequestException("Неверный параметр запроса by");
+            String validValues = Arrays.stream(SearchBy.values())
+                    .map(Enum::name)
+                    .map(String::toLowerCase)
+                    .collect(Collectors.joining(", "));
+            throw new BadRequestException("Неверный параметр запроса by. Допустимые значения: " + validValues);
         }
     }
 }

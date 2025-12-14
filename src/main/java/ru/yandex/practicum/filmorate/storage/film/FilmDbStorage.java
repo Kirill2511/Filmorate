@@ -251,7 +251,7 @@ public class FilmDbStorage implements FilmStorage {
         String param = "%" + searchQuery.toLowerCase() + "%";
 
         if (searchParams.contains(SearchBy.TITLE) && searchParams.contains(SearchBy.DIRECTOR)) {
-            sql.append("\nWHERE LOWER(f.name) LIKE ? OR LOWER (d.name) LIKE ?\n");
+            sql.append("\nWHERE LOWER(f.name) LIKE ? OR LOWER(d.name) LIKE ?\n");
             sql.append(GROUP_BY);
             sql.append("ORDER BY likes_count DESC");
             return jdbcTemplate.query(sql.toString(), mapper, param, param);

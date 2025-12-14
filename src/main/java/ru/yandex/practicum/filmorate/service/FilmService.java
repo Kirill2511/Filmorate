@@ -113,6 +113,9 @@ public class FilmService {
         if (searchParams.isEmpty()) {
             throw new BadRequestException("Параметр by не может быть пустым");
         }
+        if (searchQuery == null || searchQuery.isBlank()) {
+            throw new BadRequestException("Неверно передана строка поиска");
+        }
         return filmStorage.searchFilm(searchQuery, searchParams);
     }
 }
