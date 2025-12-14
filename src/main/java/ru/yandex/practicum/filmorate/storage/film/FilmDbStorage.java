@@ -250,21 +250,25 @@ public class FilmDbStorage implements FilmStorage {
         StringBuilder sql = new StringBuilder(BASE_SELECT_QUERY);
         String param = "%" + searchQuery.toLowerCase() + "%";
 
-        if (searchParams.contains(SearchBy.TITLE) && searchParams.contains(SearchBy.DIRECTOR)) {
+        boolean searchBoth = searchParams.contains(SearchBy.TITLE) &&
+                searchParams.contains(SearchBy.DIRECTOR);
+
+        // WHERE clause
+        if (searchBoth) {
             sql.append("\nWHERE LOWER(f.name) LIKE ? OR LOWER(d.name) LIKE ?\n");
-            sql.append(GROUP_BY);
-            sql.append("ORDER BY likes_count DESC");
-            return jdbcTemplate.query(sql.toString(), mapper, param, param);
-        }
-        if (searchParams.contains(SearchBy.TITLE)) {
+        } else if (searchParams.contains(SearchBy.TITLE)) {
             sql.append("\nWHERE LOWER(f.name) LIKE ?\n");
-        } else if (searchParams.contains(SearchBy.DIRECTOR)) {
+        } else {
             sql.append("\nWHERE LOWER(d.name) LIKE ?\n");
         }
-        sql.append(GROUP_BY);
-        sql.append("ORDER BY likes_count DESC");
 
-        return jdbcTemplate.query(sql.toString(), mapper, param);
+        // Общая часть - один раз для всех случаев
+        sql.append(GROUP_BY).append("ORDER BY likes_count DESC");
+
+        // Вызов query с правильными параметрами
+        return searchBoth
+                ? jdbcTemplate.query(sql.toString(), mapper, param, param)
+                : jdbcTemplate.query(sql.toString(), mapper, param);
     }
 
     /**

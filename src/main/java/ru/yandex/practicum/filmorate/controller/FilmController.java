@@ -88,6 +88,14 @@ public class FilmController {
         return filmService.getFilmsByDirector(directorId, sortBy);
     }
 
+    /**
+     * Поиск фильмов по названию и/или имени режиссера.
+     * Результаты сортируются по количеству лайков (по убыванию).
+     *
+     * @param query строка поиска (регистронезависимый поиск)
+     * @param by параметры поиска (title, director или оба через запятую)
+     * @return список найденных фильмов
+     */
     @GetMapping("/search")
     public List<Film> searchFilm(@RequestParam String query,
                                  @RequestParam Set<SearchBy> by) {

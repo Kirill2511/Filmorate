@@ -21,6 +21,7 @@ public class StringToSearchBySetConverter implements Converter<String, Set<Searc
         try {
             return Arrays.stream(source.split(","))
                     .map(String::toUpperCase)
+                    .map(String::trim)
                     .map(SearchBy::valueOf)
                     .collect(Collectors.toSet());
         } catch (IllegalArgumentException e) {
