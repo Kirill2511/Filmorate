@@ -51,10 +51,10 @@ public class FeedDbStorage implements FeedStorage {
             return ps;
         }, keyHolder);
 
-        event.setId(keyHolder.getKey().intValue());
+        event.setEventId(keyHolder.getKey().intValue());
 
-        log.debug("Создано событие с id: {}", event.getId());
-        return findByEventId(event.getId());
+        log.debug("Создано событие с id: {}", event.getEventId());
+        return findByEventId(event.getEventId());
     }
 
     @Override
@@ -84,7 +84,7 @@ public class FeedDbStorage implements FeedStorage {
     private RowMapper<FeedEvent> eventRowMapper() {
         return (rs, rowNum) -> {
             FeedEvent event = new FeedEvent();
-            event.setId(rs.getInt("event_id"));
+            event.setEventId(rs.getInt("event_id"));
             event.setUserId(rs.getInt("user_id"));
             event.setEntityId(rs.getInt("entity_id"));
             event.setEventType(EventType.valueOf(rs.getString("event_type")));
