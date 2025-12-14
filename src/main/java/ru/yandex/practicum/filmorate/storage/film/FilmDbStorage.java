@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.controller.params.SearchBy;
 import ru.yandex.practicum.filmorate.controller.params.SortBy;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
@@ -245,6 +246,32 @@ public class FilmDbStorage implements FilmStorage {
                 friendId, films.size());
 
         return films;
+    }
+
+    @Override
+    public List<Film> searchFilm(String searchQuery, Set<SearchBy> searchParams) {
+        StringBuilder sql = new StringBuilder(BASE_SELECT_QUERY);
+        String param = "%" + searchQuery.toLowerCase() + "%";
+
+        boolean searchBoth = searchParams.contains(SearchBy.TITLE) &&
+                searchParams.contains(SearchBy.DIRECTOR);
+
+        // WHERE clause
+        if (searchBoth) {
+            sql.append("\nWHERE LOWER(f.name) LIKE ? OR LOWER(d.name) LIKE ?\n");
+        } else if (searchParams.contains(SearchBy.TITLE)) {
+            sql.append("\nWHERE LOWER(f.name) LIKE ?\n");
+        } else {
+            sql.append("\nWHERE LOWER(d.name) LIKE ?\n");
+        }
+
+        // Общая часть - один раз для всех случаев
+        sql.append(GROUP_BY).append("ORDER BY likes_count DESC");
+
+        // Вызов query с правильными параметрами
+        return searchBoth
+                ? jdbcTemplate.query(sql.toString(), mapper, param, param)
+                : jdbcTemplate.query(sql.toString(), mapper, param);
     }
 
     /**

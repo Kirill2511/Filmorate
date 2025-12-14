@@ -3,7 +3,9 @@ package ru.yandex.practicum.filmorate.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.yandex.practicum.filmorate.controller.params.SearchBy;
 import ru.yandex.practicum.filmorate.controller.params.SortBy;
+import ru.yandex.practicum.filmorate.exception.BadRequestException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.feed.EventType;
@@ -12,6 +14,7 @@ import ru.yandex.practicum.filmorate.storage.director.DirectorStorage;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -113,5 +116,15 @@ public class FilmService {
         userService.getUserById(userId); // Проверяем существование пользователя
         log.info("Запрос рекомендаций для пользователя {}", userId);
         return filmStorage.getRecommendations(userId);
+    }
+
+    public List<Film> searchFilm(String searchQuery, Set<SearchBy> searchParams) {
+        if (searchParams.isEmpty()) {
+            throw new BadRequestException("Параметр by не может быть пустым");
+        }
+        if (searchQuery == null || searchQuery.isBlank()) {
+            throw new BadRequestException("Неверно передана строка поиска");
+        }
+        return filmStorage.searchFilm(searchQuery, searchParams);
     }
 }
