@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class FeedEvent {
-    private Integer id;
+    private Integer eventId;
     private Integer userId;
     private Integer entityId;
     private EventType eventType;
