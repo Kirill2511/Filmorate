@@ -103,5 +103,6 @@ public class UserService {
 
     public void deleteUser(Integer userId) {
         userStorage.delete(userId);
+        log.info("Удалён пользователь: id={}", userId);
     }
 }

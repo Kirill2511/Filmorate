@@ -129,6 +129,7 @@ public class FilmService {
     }
 
     public void deleteFilm(Integer filmId) {
+        log.info("Удаление фильма с id {}", filmId);
         filmStorage.delete(filmId);
     }
 }
