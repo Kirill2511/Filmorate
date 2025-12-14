@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.controller.params.SearchBy;
 import ru.yandex.practicum.filmorate.controller.params.SortBy;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Director;
@@ -242,6 +243,28 @@ public class FilmDbStorage implements FilmStorage {
                 friendId, films.size());
 
         return films;
+    }
+
+    @Override
+    public List<Film> searchFilm(String searchQuery, Set<SearchBy> searchParams) {
+        StringBuilder sql = new StringBuilder(BASE_SELECT_QUERY);
+        String param = "%" + searchQuery.toLowerCase() + "%";
+
+        if (searchParams.contains(SearchBy.TITLE) && searchParams.contains(SearchBy.DIRECTOR)) {
+            sql.append("\nWHERE LOWER(f.name) LIKE ? OR LOWER (d.name) LIKE ?\n");
+            sql.append(GROUP_BY);
+            sql.append("ORDER BY likes_count DESC");
+            return jdbcTemplate.query(sql.toString(), mapper, param, param);
+        }
+        if (searchParams.contains(SearchBy.TITLE)) {
+            sql.append("\nWHERE LOWER(f.name) LIKE ?\n");
+        } else if (searchParams.contains(SearchBy.DIRECTOR)) {
+            sql.append("\nWHERE LOWER(d.name) LIKE ?\n");
+        }
+        sql.append(GROUP_BY);
+        sql.append("ORDER BY likes_count DESC");
+
+        return jdbcTemplate.query(sql.toString(), mapper, param);
     }
 
     /**

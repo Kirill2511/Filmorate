@@ -93,6 +93,13 @@ public class ValidationExceptionHandler {
         return Map.of("error", ex.getMessage());
     }
 
+    @ExceptionHandler(BadRequestException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleBadRequest(BadRequestException ex) {
+        log.warn("Ошибка в параметрах запроса: {}", ex.getMessage());
+        return Map.of("error", ex.getMessage());
+    }
+
     /**
      * Обработка нарушения ограничений целостности БД (например, FK constraint)
      */
