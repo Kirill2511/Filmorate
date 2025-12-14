@@ -100,4 +100,9 @@ public class UserService {
                 .map(userStorage::findById)
                 .collect(Collectors.toList());
     }
+
+    public void deleteUser(Integer userId) {
+        userStorage.delete(userId);
+        log.info("Удалён пользователь: id={}", userId);
+    }
 }

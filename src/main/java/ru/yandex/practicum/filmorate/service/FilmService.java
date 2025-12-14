@@ -127,4 +127,9 @@ public class FilmService {
         }
         return filmStorage.searchFilm(searchQuery, searchParams);
     }
+
+    public void deleteFilm(Integer filmId) {
+        log.info("Удаление фильма с id {}", filmId);
+        filmStorage.delete(filmId);
+    }
 }

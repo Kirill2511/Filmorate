@@ -93,12 +93,17 @@ public class FilmController {
      * Результаты сортируются по количеству лайков (по убыванию).
      *
      * @param query строка поиска (регистронезависимый поиск)
-     * @param by параметры поиска (title, director или оба через запятую)
+     * @param by    параметры поиска (title, director или оба через запятую)
      * @return список найденных фильмов
      */
     @GetMapping("/search")
     public List<Film> searchFilm(@RequestParam String query,
                                  @RequestParam Set<SearchBy> by) {
         return filmService.searchFilm(query, by);
+    }
+
+    @DeleteMapping("/{id}")
+    public void deleteFilm(@PathVariable Integer id) {
+        filmService.deleteFilm(id);
     }
 }
