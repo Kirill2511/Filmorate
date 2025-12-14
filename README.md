@@ -11,11 +11,14 @@ erDiagram
     USERS ||--o{ FILM_LIKES : "likes"
     USERS ||--o{ REVIEWS : "writes"
     USERS ||--o{ REVIEW_RATINGS : "rates"
+    USERS ||--o{ FEED : "has_events"
     FILMS ||--o{ FILM_LIKES : "has_likes"
     FILMS ||--o{ REVIEWS : "has_reviews"
     FILMS }o--|| MPA_RATING : "has_mpa"
     FILMS ||--o{ FILM_GENRE : "has_genres"
+    FILMS ||--o{ FILM_DIRECTORS : "has_directors"
     GENRES ||--o{ FILM_GENRE : "assigned_to"
+    DIRECTORS ||--o{ FILM_DIRECTORS : "directed"
     REVIEWS ||--o{ REVIEW_RATINGS : "has_ratings"
 
     USERS {
@@ -52,9 +55,19 @@ erDiagram
         string name UK
     }
 
+    DIRECTORS {
+        int director_id PK
+        string name
+    }
+
     FILM_GENRE {
         int film_id PK,FK
         int genre_id PK,FK
+    }
+
+    FILM_DIRECTORS {
+        int film_id PK,FK
+        int director_id PK,FK
     }
 
     FILM_LIKES {
@@ -75,6 +88,15 @@ erDiagram
         int user_id PK,FK
         boolean is_like
     }
+
+    FEED {
+        int event_id PK
+        int user_id FK
+        int entity_id
+        string event_type
+        string operation
+        timestamp created_at
+    }
 ```
 
 ### Обозначения связей на диаграмме
@@ -84,12 +106,15 @@ erDiagram
 - **"likes"** — пользователь ставит лайки фильмам
 - **"writes"** — пользователь пишет отзывы на фильмы
 - **"rates"** — пользователь оценивает отзывы (лайк/дизлайк)
+- **"has_events"** — пользователь имеет события в ленте
 - **"has_likes"** — фильм имеет лайки от пользователей
 - **"has_reviews"** — фильм имеет отзывы
 - **"has_ratings"** — отзыв имеет оценки полезности
 - **"has_mpa"** — фильм имеет рейтинг MPA
 - **"has_genres"** — фильм имеет жанры
+- **"has_directors"** — фильм имеет режиссёров
 - **"assigned_to"** — жанр назначен фильмам
+- **"directed"** — режиссёр снял фильмы
 
 ## Описание таблиц
 
@@ -126,6 +151,15 @@ erDiagram
 
 Связь многие-ко-многим между фильмами и жанрами (у фильма может быть несколько жанров).
 
+### DIRECTORS
+
+Справочник режиссёров фильмов.
+
+### FILM_DIRECTORS
+
+Связь многие-ко-многим между фильмами и режиссёрами (у фильма может быть несколько режиссёров, режиссёр может снять
+несколько фильмов).
+
 ### FILM_LIKES
 
 Лайки пользователей к фильмам.
@@ -148,6 +182,17 @@ erDiagram
 
 - `is_like = TRUE` — лайк (увеличивает рейтинг на 1)
 - `is_like = FALSE` — дизлайк (уменьшает рейтинг на 1)
+
+### FEED
+
+Лента событий пользователя. Хранит историю действий пользователей:
+
+- `event_id` — уникальный идентификатор события
+- `user_id` — пользователь, совершивший действие
+- `entity_id` — идентификатор сущности (фильм, друг, отзыв)
+- `event_type` — тип события (LIKE, FRIEND, REVIEW)
+- `operation` — операция (ADD, REMOVE, UPDATE)
+- `created_at` — время события
 
 ## SQL Запросы
 
