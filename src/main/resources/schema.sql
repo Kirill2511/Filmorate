@@ -1,3 +1,17 @@
+-- Удаление таблиц для пересоздания (сброс ID)
+DROP TABLE IF EXISTS feed;
+DROP TABLE IF EXISTS review_ratings;
+DROP TABLE IF EXISTS reviews;
+DROP TABLE IF EXISTS friendship;
+DROP TABLE IF EXISTS film_likes;
+DROP TABLE IF EXISTS film_directors;
+DROP TABLE IF EXISTS film_genre;
+DROP TABLE IF EXISTS films;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS directors;
+DROP TABLE IF EXISTS genres;
+DROP TABLE IF EXISTS mpa_rating;
+
 -- Таблица рейтингов MPA
 CREATE TABLE IF NOT EXISTS mpa_rating
 (
