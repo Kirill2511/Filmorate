@@ -343,7 +343,7 @@ public class FilmDbStorage implements FilmStorage {
      *
      * @param userId идентификатор пользователя, для которого составляются
      *               рекомендации
-     * @return список рекомендованных фильмов, отсортированных по популярности
+     * @return список рекомендованных фильмов, отсортированных по популярности.
      */
     @Override
     public List<Film> getRecommendations(Integer userId) {
