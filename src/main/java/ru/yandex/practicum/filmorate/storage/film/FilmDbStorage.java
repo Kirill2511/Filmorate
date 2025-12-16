@@ -3,7 +3,6 @@ package ru.yandex.practicum.filmorate.storage.film;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
@@ -63,8 +62,7 @@ public class FilmDbStorage implements FilmStorage {
                 m.name
             """;
 
-    private final JdbcTemplate jdbcTemplate;
-    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+    private final NamedParameterJdbcTemplate namedJdbc;
     private final FilmRowMapper mapper;
 
     @Override
@@ -72,7 +70,7 @@ public class FilmDbStorage implements FilmStorage {
         String sql = "INSERT INTO films (name, description, release_date, duration, mpa_id) VALUES (?, ?, ?, ?, ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
-        jdbcTemplate.update(connection -> {
+        namedJdbc.getJdbcTemplate().update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, new String[]{"film_id"});
             ps.setString(1, film.getName());
             ps.setString(2, film.getDescription());
@@ -101,7 +99,7 @@ public class FilmDbStorage implements FilmStorage {
         findById(film.getId());
 
         String sql = "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, mpa_id = ? WHERE film_id = ?";
-        jdbcTemplate.update(sql,
+        namedJdbc.getJdbcTemplate().update(sql,
                 film.getName(),
                 film.getDescription(),
                 Date.valueOf(film.getReleaseDate()),
@@ -111,7 +109,7 @@ public class FilmDbStorage implements FilmStorage {
 
         // Обновляем жанры
         String deleteGenresSql = "DELETE FROM film_genre WHERE film_id = ?";
-        jdbcTemplate.update(deleteGenresSql, film.getId());
+        namedJdbc.getJdbcTemplate().update(deleteGenresSql, film.getId());
 
         if (film.getGenres() != null && !film.getGenres().isEmpty()) {
             saveGenres(film.getId(), film.getGenres());
@@ -119,7 +117,7 @@ public class FilmDbStorage implements FilmStorage {
 
         // Обновляем режиссеров
         String deleteDirectorsSql = "DELETE from film_directors WHERE film_id = ?";
-        jdbcTemplate.update(deleteDirectorsSql, film.getId());
+        namedJdbc.getJdbcTemplate().update(deleteDirectorsSql, film.getId());
 
         if (film.getDirectors() != null && !film.getDirectors().isEmpty()) {
             addFilmDirectors(film.getId(), film.getDirectors());
@@ -133,7 +131,7 @@ public class FilmDbStorage implements FilmStorage {
     public List<Film> findAll() {
         String sql = BASE_SELECT_QUERY + "\n" + GROUP_BY;
 
-        List<Film> films = jdbcTemplate.query(sql, mapper);
+        List<Film> films = namedJdbc.getJdbcTemplate().query(sql, mapper);
 
         log.debug("Получен список всех фильмов, количество: {}", films.size());
         return films;
@@ -143,7 +141,7 @@ public class FilmDbStorage implements FilmStorage {
     public Film findById(Integer id) {
         String sql = BASE_SELECT_QUERY + "\nWHERE f.film_id = ?\n" + GROUP_BY;
 
-        List<Film> films = jdbcTemplate.query(sql, mapper, id);
+        List<Film> films = namedJdbc.getJdbcTemplate().query(sql, mapper, id);
 
         if (films.isEmpty()) {
             throw new NotFoundException("Фильм с id " + id + " не найден");
@@ -158,7 +156,7 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public void delete(Integer id) {
         String sql = "DELETE FROM films WHERE film_id = ?";
-        int rowsAffected = jdbcTemplate.update(sql, id);
+        int rowsAffected = namedJdbc.getJdbcTemplate().update(sql, id);
 
         if (rowsAffected == 0) {
             throw new NotFoundException("Фильм с id " + id + " не найден");
@@ -172,7 +170,7 @@ public class FilmDbStorage implements FilmStorage {
         findById(filmId);
 
         String sql = "MERGE INTO film_likes (film_id, user_id) VALUES (?, ?)";
-        jdbcTemplate.update(sql, filmId, userId);
+        namedJdbc.getJdbcTemplate().update(sql, filmId, userId);
 
         log.debug("Пользователь {} поставил лайк фильму {}", userId, filmId);
     }
@@ -182,7 +180,7 @@ public class FilmDbStorage implements FilmStorage {
         findById(filmId);
 
         String sql = "DELETE FROM film_likes WHERE film_id = ? AND user_id = ?";
-        jdbcTemplate.update(sql, filmId, userId);
+        namedJdbc.getJdbcTemplate().update(sql, filmId, userId);
 
         log.debug("Пользователь {} удалил лайк у фильма {}", userId, filmId);
     }
@@ -192,7 +190,7 @@ public class FilmDbStorage implements FilmStorage {
         String sql = buildQuery(year, genreId);
         Object[] params = buildParams(year, genreId, limit);
 
-        List<Film> films = jdbcTemplate.query(sql, mapper, params);
+        List<Film> films = namedJdbc.getJdbcTemplate().query(sql, mapper, params);
 
         log.debug("Получен список популярных фильмов, количество: {}", films.size());
         return films;
@@ -207,7 +205,7 @@ public class FilmDbStorage implements FilmStorage {
      * year  — сортировка по дате выхода фильма по возрастанию.
      * 2. Собирает итоговый SQL-запрос на основе базового SELECT, условия по director_id
      * и группировки (GROUP BY), а затем добавляет секцию сортировки.
-     * 3. Выполняет запрос через JdbcTemplate и маппер, возвращая список фильмов.
+     * 3. Выполняет запрос через namedJdbc.getJdbcTemplate() и маппер, возвращая список фильмов.
      *
      * @param directorId идентификатор режиссера
      * @param sortBy     тип сортировки (likes или year)
@@ -223,7 +221,7 @@ public class FilmDbStorage implements FilmStorage {
         }
         String sql = BASE_SELECT_QUERY + "\nWHERE d.director_id = ?\n" + GROUP_BY + "\n" + sqlSortBy + "\n";
 
-        List<Film> films = jdbcTemplate.query(sql, mapper, directorId);
+        List<Film> films = namedJdbc.getJdbcTemplate().query(sql, mapper, directorId);
         log.debug("Получен список фильмов режиссера, количество: {}", films.size());
         return films;
     }
@@ -231,17 +229,17 @@ public class FilmDbStorage implements FilmStorage {
     @Override
     public List<Film> getCommonFilms(Integer userId, Integer friendId) {
         String sql = BASE_SELECT_QUERY +
-                "WHERE f.film_id IN (" +
-                "SELECT fl.film_id " +
-                "FROM film_likes fl " +
-                "WHERE fl.user_id IN (?, ?) " +
-                "GROUP BY fl.film_id " +
-                "HAVING COUNT(DISTINCT fl.user_id) = 2" +
-                ") " +
-                GROUP_BY +
-                "ORDER BY likes_count DESC";
+                     "WHERE f.film_id IN (" +
+                     "SELECT fl.film_id " +
+                     "FROM film_likes fl " +
+                     "WHERE fl.user_id IN (?, ?) " +
+                     "GROUP BY fl.film_id " +
+                     "HAVING COUNT(DISTINCT fl.user_id) = 2" +
+                     ") " +
+                     GROUP_BY +
+                     "ORDER BY likes_count DESC";
 
-        List<Film> films = jdbcTemplate.query(sql, new Object[]{userId, friendId}, mapper);
+        List<Film> films = namedJdbc.getJdbcTemplate().query(sql, new Object[]{userId, friendId}, mapper);
         log.debug("Получен список общих фильмов пользователей {} и {}, количество: {}", userId,
                 friendId, films.size());
 
@@ -254,7 +252,7 @@ public class FilmDbStorage implements FilmStorage {
         String param = "%" + searchQuery.toLowerCase() + "%";
 
         boolean searchBoth = searchParams.contains(SearchBy.TITLE) &&
-                searchParams.contains(SearchBy.DIRECTOR);
+                             searchParams.contains(SearchBy.DIRECTOR);
 
         // WHERE clause
         if (searchBoth) {
@@ -270,8 +268,8 @@ public class FilmDbStorage implements FilmStorage {
 
         // Вызов query с правильными параметрами
         return searchBoth
-                ? jdbcTemplate.query(sql.toString(), mapper, param, param)
-                : jdbcTemplate.query(sql.toString(), mapper, param);
+                ? namedJdbc.getJdbcTemplate().query(sql.toString(), mapper, param, param)
+                : namedJdbc.getJdbcTemplate().query(sql.toString(), mapper, param);
     }
 
     /**
@@ -320,7 +318,7 @@ public class FilmDbStorage implements FilmStorage {
             batchArgs.add(new Object[]{filmId, genre.getId()});
         }
 
-        jdbcTemplate.batchUpdate(sql, batchArgs);
+        namedJdbc.getJdbcTemplate().batchUpdate(sql, batchArgs);
     }
 
     /**
@@ -342,7 +340,7 @@ public class FilmDbStorage implements FilmStorage {
     private void addFilmDirectors(int filmId, List<Director> directors) {
         String sql = "INSERT INTO film_directors (film_id, director_id) VALUES (?, ?)";
 
-        jdbcTemplate.batchUpdate(sql, directors, directors.size(),
+        namedJdbc.getJdbcTemplate().batchUpdate(sql, directors, directors.size(),
                 (ps, director) -> {
                     ps.setInt(1, filmId);
                     ps.setInt(2, director.getId());
@@ -376,7 +374,7 @@ public class FilmDbStorage implements FilmStorage {
     public List<Film> getRecommendations(Integer userId) {
         // Проверяем, есть ли у пользователя лайки
         String checkLikesSql = "SELECT COUNT(*) FROM film_likes WHERE user_id = ?";
-        Integer userLikesCount = jdbcTemplate.queryForObject(checkLikesSql, Integer.class, userId);
+        Integer userLikesCount = namedJdbc.getJdbcTemplate().queryForObject(checkLikesSql, Integer.class, userId);
 
         if (userLikesCount == null || userLikesCount == 0) {
             log.debug("У пользователя {} нет лайков, рекомендации не могут быть составлены", userId);
@@ -412,7 +410,7 @@ public class FilmDbStorage implements FilmStorage {
                 """;
 
         MapSqlParameterSource params = new MapSqlParameterSource("userId", userId);
-        List<Film> films = namedParameterJdbcTemplate.query(sql, params, mapper);
+        List<Film> films = namedJdbc.query(sql, params, mapper);
 
         if (films.isEmpty()) {
             log.debug("Для пользователя {} не найдено похожих пользователей или все фильмы уже просмотрены", userId);
