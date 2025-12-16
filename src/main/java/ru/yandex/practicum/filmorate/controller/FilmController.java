@@ -25,31 +25,37 @@ public class FilmController {
 
     @PostMapping
     public Film createFilm(@Valid @RequestBody Film film) {
+        log.info("POST /films - создание фильма");
         return filmService.createFilm(film);
     }
 
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film film) {
+        log.info("PUT /films - обновление фильма {}", film.getId());
         return filmService.updateFilm(film);
     }
 
     @GetMapping
     public List<Film> getAllFilms() {
+        log.info("GET /films - получение списка всех фильмов");
         return filmService.getAllFilms();
     }
 
     @GetMapping("/{id}")
     public Film getFilmById(@PathVariable Integer id) {
+        log.info("GET /films/{} - получение фильма по id", id);
         return filmService.getFilmById(id);
     }
 
     @PutMapping("/{id}/like/{userId}")
     public void addLike(@PathVariable Integer id, @PathVariable Integer userId) {
+        log.info("PUT /films/{}/like/{} - добавление лайка к фильму", id, userId);
         filmService.addLike(id, userId);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
     public void removeLike(@PathVariable Integer id, @PathVariable Integer userId) {
+        log.info("DELETE /films/{}/like/{} - удаление лайка у фильма", id, userId);
         filmService.removeLike(id, userId);
     }
 
@@ -60,6 +66,9 @@ public class FilmController {
                                       @Min(value = 1895, message = "Year should be after or equal to 1895") Integer year,
                                       @RequestParam(required = false)
                                       @Positive(message = "genreId should be positive integer") Integer genreId) {
+        log.info("GET /films/popular - получение популярных фильмов, count: {}, year: {}, genreId: {}",
+                count, year, genreId);
+
         return filmService.getPopularFilms(count, year, genreId);
     }
 
@@ -68,6 +77,9 @@ public class FilmController {
                                      @Positive(message = "userId should be positive integer") Integer userId,
                                      @RequestParam
                                      @Positive(message = "friendId should be positive integer") Integer friendId) {
+        log.info("GET /films/common - получение общих фильмов для пользователей: userId: {}, friendId: {}",
+                userId, friendId);
+
         return filmService.getCommonFilms(userId, friendId);
     }
 
@@ -85,6 +97,7 @@ public class FilmController {
     @GetMapping("/director/{directorId}")
     public List<Film> getFilmsByDirector(@PathVariable Integer directorId,
                                          @RequestParam(defaultValue = "likes") SortBy sortBy) {
+        log.info("GET /films/director/{} - получение фильмов по режиссеру, sortBy: {}", directorId, sortBy);
         return filmService.getFilmsByDirector(directorId, sortBy);
     }
 
@@ -99,11 +112,13 @@ public class FilmController {
     @GetMapping("/search")
     public List<Film> searchFilm(@RequestParam String query,
                                  @RequestParam Set<SearchBy> by) {
+        log.info("GET /films/search - получение фильмов по названию или имени режиссера: query: {}, by: {}", query, by);
         return filmService.searchFilm(query, by);
     }
 
     @DeleteMapping("/{id}")
     public void deleteFilm(@PathVariable Integer id) {
+        log.info("DELETE /films/{} - удаление фильма", id);
         filmService.deleteFilm(id);
     }
 }
