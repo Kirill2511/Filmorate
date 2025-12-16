@@ -16,7 +16,7 @@ import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
-public class ValidationExceptionHandler {
+public class GlobalExceptionHandler {
 
     /**
      * Обработка ошибок валидации Bean Validation (аннотации @Valid)
