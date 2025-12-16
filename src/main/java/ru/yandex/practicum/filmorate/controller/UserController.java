@@ -49,7 +49,7 @@ public class UserController {
 
     @PutMapping("/{id}/friends/{friendId}")
     public void addFriend(@PathVariable Integer id, @PathVariable Integer friendId) {
-        log.info("PUT /users/{}/friends/{} - добавления друга", id, friendId);
+        log.info("PUT /users/{}/friends/{} - добавление друга", id, friendId);
         userService.addFriend(id, friendId);
     }
 
@@ -79,13 +79,13 @@ public class UserController {
 
     @GetMapping("/{id}/recommendations")
     public Collection<Film> getRecommendations(@PathVariable Integer id) {
-        log.info("GET /users/{}/recommendations- получение рекомендаций для пользователя", id);
+        log.info("GET /users/{}/recommendations - получение рекомендаций для пользователя", id);
         return filmService.getRecommendations(id);
     }
 
     @DeleteMapping("/{id}")
     public void deleteUser(@PathVariable Integer id) {
-        log.info("DELETE /users/{}- удаление пользователя", id);
+        log.info("DELETE /users/{} - удаление пользователя", id);
         userService.deleteUser(id);
     }
 }
