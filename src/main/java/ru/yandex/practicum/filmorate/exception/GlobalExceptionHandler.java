@@ -1,5 +1,6 @@
 package ru.yandex.practicum.filmorate.exception;
 
+import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -8,13 +9,14 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
-public class ValidationExceptionHandler {
+public class GlobalExceptionHandler {
 
     /**
      * Обработка ошибок валидации Bean Validation (аннотации @Valid)
@@ -37,6 +39,28 @@ public class ValidationExceptionHandler {
         });
         log.debug("Всего ошибок валидации: {}", errors.size());
         return errors;
+    }
+
+    /**
+     * Обработка ошибок валидации параметров запроса.
+     * Например: @Positive, при попытке ввести текст, а не число - пользователь получит именно это сообщение.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleParamValidationExceptions(MethodArgumentTypeMismatchException ex) {
+        String error = "Param " + ex.getPropertyName() + " violates validation rule";
+        return Map.of("error", error);
+    }
+
+    /**
+     * Обработка ошибок валидации параметров запроса.
+     * Например: @Min, при попытке ввести число меньше заданного пользователь получить сообщение указанное в
+     * аннотации. Или дефолтное.
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleParamValidationExceptions(ConstraintViolationException ex) {
+        return Map.of("error", ex.getMessage());
     }
 
     /**
@@ -66,6 +90,13 @@ public class ValidationExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public Map<String, String> handleIllegalArgumentException(IllegalArgumentException ex) {
         log.warn("Некорректный аргумент: {}", ex.getMessage());
+        return Map.of("error", ex.getMessage());
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> handleBadRequest(BadRequestException ex) {
+        log.warn("Ошибка в параметрах запроса: {}", ex.getMessage());
         return Map.of("error", ex.getMessage());
     }
 
